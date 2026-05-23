@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { useRouter, notFound } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  UNIVERSITIES,
   formatDate,
   formatSom,
   PART_OF_DAY_LABEL,
-  getUniversity,
-} from "@/lib/mock-universities";
-import { isProfileComplete, useAuth } from "@/lib/auth-context";
-import { Application, PartOfDay } from "@/lib/types";
+} from "@/lib/format";
+import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
+import { PartOfDay, University } from "@/lib/types";
 import { Badge, Button } from "@/components/ui";
 
 export default function UniversityDetailPage({
@@ -19,22 +17,33 @@ export default function UniversityDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const uni = getUniversity(id);
-  const { user, addApplication } = useAuth();
+  const { id: slug } = use(params);
+  const { user, refresh } = useAuth();
   const router = useRouter();
+  const [uni, setUni] = useState<University | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showProfileBanner, setShowProfileBanner] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!uni) notFound();
-  }, [uni]);
+    apiJson<University>(`/api/universities/${slug}`)
+      .then(setUni)
+      .catch(() => setUni(null))
+      .finally(() => setLoading(false));
+  }, [slug]);
 
-  if (!uni) return null;
+  if (loading) {
+    return <div className="mx-auto max-w-6xl px-8 py-16 text-muted">Yuklanmoqda...</div>;
+  }
+  if (!uni) {
+    return <div className="mx-auto max-w-6xl px-8 py-16 text-muted">Universitet topilmadi.</div>;
+  }
 
   const alreadyApplied = user?.applications.some((a) => a.universityId === uni.id);
 
   const onApply = () => {
+    setError(null);
     if (!user) {
       router.push("/kirish");
       return;
@@ -48,6 +57,23 @@ export default function UniversityDetailPage({
       return;
     }
     setShowApplyModal(true);
+  };
+
+  const submitApply = async (data: {
+    majorId: string;
+    partOfDay: PartOfDay;
+    financialAid: boolean;
+  }) => {
+    try {
+      await apiJson("/api/applications", {
+        body: { universityId: uni.id, ...data },
+      });
+      await refresh();
+      setShowApplyModal(false);
+      router.push("/arizalar");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Xatolik yuz berdi.");
+    }
   };
 
   return (
@@ -69,9 +95,7 @@ export default function UniversityDetailPage({
           </div>
 
           <h1 className="text-[28px] font-bold text-ink leading-tight">{uni.name}</h1>
-          <p className="text-[15px] text-muted mt-2">
-            📍 {uni.address}
-          </p>
+          <p className="text-[15px] text-muted mt-2">📍 {uni.address}</p>
 
           <div className="flex flex-wrap gap-2 mt-4">
             {uni.language.map((l) => (
@@ -80,14 +104,10 @@ export default function UniversityDetailPage({
               </Badge>
             ))}
             {uni.offersFinancialAid && <Badge variant="success">Grant mavjud</Badge>}
-            {uni.hasEntranceExam && (
-              <Badge variant="info">Ichki imtihon mavjud</Badge>
-            )}
+            {uni.hasEntranceExam && <Badge variant="info">Ichki imtihon mavjud</Badge>}
           </div>
 
-          <p className="text-[16px] text-body mt-6 leading-relaxed">
-            {uni.description}
-          </p>
+          <p className="text-[16px] text-body mt-6 leading-relaxed">{uni.description}</p>
 
           <Section title="O'qish narxi">
             <p className="text-[16px] text-ink">
@@ -104,20 +124,12 @@ export default function UniversityDetailPage({
 
           <Section title="Talablar">
             <ul className="space-y-2 text-[15px] text-body">
-              {uni.requirements.minDtm && (
-                <li>• DTM ball: kamida {uni.requirements.minDtm}</li>
-              )}
-              {uni.requirements.minIelts && (
-                <li>• IELTS: kamida {uni.requirements.minIelts}</li>
-              )}
-              {uni.requirements.minSat && (
-                <li>• SAT: kamida {uni.requirements.minSat}</li>
-              )}
-              {uni.requirements.minGpa && (
-                <li>• GPA: kamida {uni.requirements.minGpa}</li>
-              )}
-              {uni.requirements.note && (
-                <li className="text-muted">• {uni.requirements.note}</li>
+              {uni.minDtm && <li>• DTM ball: kamida {uni.minDtm}</li>}
+              {uni.minIelts && <li>• IELTS: kamida {uni.minIelts}</li>}
+              {uni.minSat && <li>• SAT: kamida {uni.minSat}</li>}
+              {uni.minGpa && <li>• GPA: kamida {uni.minGpa}</li>}
+              {uni.requirementsNote && (
+                <li className="text-muted">• {uni.requirementsNote}</li>
               )}
             </ul>
           </Section>
@@ -125,15 +137,10 @@ export default function UniversityDetailPage({
           <Section title={`Mutaxassisliklar (${uni.majors.length})`}>
             <div className="grid sm:grid-cols-2 gap-3">
               {uni.majors.map((m) => (
-                <div
-                  key={m.id}
-                  className="border border-hairline rounded-md p-4"
-                >
+                <div key={m.id} className="border border-hairline rounded-md p-4">
                   <div className="font-medium text-ink">{m.name}</div>
                   <div className="text-[13px] text-muted mt-1">
-                    {m.partsOfDay
-                      .map((p) => PART_OF_DAY_LABEL[p])
-                      .join(" · ")}
+                    {m.partsOfDay.map((p) => PART_OF_DAY_LABEL[p]).join(" · ")}
                   </div>
                 </div>
               ))}
@@ -154,9 +161,7 @@ export default function UniversityDetailPage({
             <div className="text-[14px] text-body space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted">Muddat</span>
-                <span className="text-ink font-medium">
-                  {formatDate(uni.deadline)}
-                </span>
+                <span className="text-ink font-medium">{formatDate(uni.deadline)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Mutaxassisliklar</span>
@@ -177,30 +182,25 @@ export default function UniversityDetailPage({
                 ✓ Siz bu universitetni tanlagansiz
               </p>
             )}
+            {error && (
+              <p className="text-[13px] text-error text-center mt-2">{error}</p>
+            )}
           </div>
         </aside>
       </div>
 
       {showProfileBanner && (
         <Modal onClose={() => setShowProfileBanner(false)}>
-          <h2 className="text-[20px] font-bold text-ink">
-            Profilingizni to'ldiring
-          </h2>
+          <h2 className="text-[20px] font-bold text-ink">Profilingizni to'ldiring</h2>
           <p className="text-[15px] text-body mt-2">
-            Ariza topshirish uchun avval profilingizni to'liq to'ldirishingiz
-            kerak. Bu hujjatlar barcha universitetlar uchun bir marta
-            to'ldiriladi.
+            Ariza topshirish uchun avval profilingizni to'liq to'ldirishingiz kerak. Bu
+            hujjatlar barcha universitetlar uchun bir marta to'ldiriladi.
           </p>
           <div className="flex gap-3 mt-6">
-            <Button
-              variant="secondary"
-              onClick={() => setShowProfileBanner(false)}
-            >
+            <Button variant="secondary" onClick={() => setShowProfileBanner(false)}>
               Bekor qilish
             </Button>
-            <Button onClick={() => router.push("/profil")}>
-              Profilga o'tish
-            </Button>
+            <Button onClick={() => router.push("/profil")}>Profilga o'tish</Button>
           </div>
         </Modal>
       )}
@@ -209,30 +209,7 @@ export default function UniversityDetailPage({
         <ApplyModal
           uni={uni}
           onClose={() => setShowApplyModal(false)}
-          onSubmit={(data) => {
-            const requirements = uni.requirements;
-            const dtm = Number(user?.profile?.dtm?.total || 0);
-            const ielts = Number(user?.profile?.ielts?.overall || 0);
-            const sat = Number(user?.profile?.sat?.total || 0);
-            const meetsDtm = !requirements.minDtm || dtm >= requirements.minDtm;
-            const meetsIelts =
-              !requirements.minIelts || ielts >= requirements.minIelts;
-            const meetsSat = !requirements.minSat || sat >= requirements.minSat;
-            const meets = meetsDtm && meetsIelts && meetsSat;
-            const app: Application = {
-              id: crypto.randomUUID(),
-              universityId: uni.id,
-              majorId: data.majorId,
-              partOfDay: data.partOfDay,
-              financialAid: data.financialAid,
-              status: "yuborilmagan",
-              needsEntranceExam: uni.hasEntranceExam && !meets,
-              createdAt: new Date().toISOString(),
-            };
-            addApplication(app);
-            setShowApplyModal(false);
-            router.push("/arizalar");
-          }}
+          onSubmit={submitApply}
         />
       )}
     </div>
@@ -264,7 +241,7 @@ function ApplyModal({
   onClose,
   onSubmit,
 }: {
-  uni: (typeof UNIVERSITIES)[number];
+  uni: University;
   onClose: () => void;
   onSubmit: (data: {
     majorId: string;
@@ -272,9 +249,11 @@ function ApplyModal({
     financialAid: boolean;
   }) => void;
 }) {
-  const [majorId, setMajorId] = useState(uni.majors[0].id);
-  const selectedMajor = uni.majors.find((m) => m.id === majorId)!;
-  const [partOfDay, setPartOfDay] = useState<PartOfDay>(selectedMajor.partsOfDay[0]);
+  const [majorId, setMajorId] = useState(uni.majors[0]?.id || "");
+  const selectedMajor = uni.majors.find((m) => m.id === majorId);
+  const [partOfDay, setPartOfDay] = useState<PartOfDay>(
+    (selectedMajor?.partsOfDay[0] as PartOfDay) || "kunduzgi",
+  );
   const [financialAid, setFinancialAid] = useState(false);
 
   return (
@@ -291,8 +270,8 @@ function ApplyModal({
             value={majorId}
             onChange={(e) => {
               setMajorId(e.target.value);
-              const m = uni.majors.find((x) => x.id === e.target.value)!;
-              setPartOfDay(m.partsOfDay[0]);
+              const m = uni.majors.find((x) => x.id === e.target.value);
+              if (m) setPartOfDay(m.partsOfDay[0] as PartOfDay);
             }}
             className="w-full h-14 px-4 border border-hairline rounded-md text-[15px] focus:outline-none focus:border-ink focus:border-2"
           >
@@ -304,27 +283,29 @@ function ApplyModal({
           </select>
         </div>
 
-        <div>
-          <label className="block text-[14px] font-medium text-ink mb-1.5">
-            O'qish shakli
-          </label>
-          <div className="flex gap-2 flex-wrap">
-            {selectedMajor.partsOfDay.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPartOfDay(p)}
-                className={`h-11 px-4 rounded-full text-[14px] font-medium border ${
-                  partOfDay === p
-                    ? "bg-ink text-white border-ink"
-                    : "bg-canvas text-ink border-hairline hover:border-ink"
-                }`}
-              >
-                {PART_OF_DAY_LABEL[p]}
-              </button>
-            ))}
+        {selectedMajor && (
+          <div>
+            <label className="block text-[14px] font-medium text-ink mb-1.5">
+              O'qish shakli
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {selectedMajor.partsOfDay.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPartOfDay(p as PartOfDay)}
+                  className={`h-11 px-4 rounded-full text-[14px] font-medium border ${
+                    partOfDay === p
+                      ? "bg-ink text-white border-ink"
+                      : "bg-canvas text-ink border-hairline hover:border-ink"
+                  }`}
+                >
+                  {PART_OF_DAY_LABEL[p]}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {uni.offersFinancialAid && (
           <div>

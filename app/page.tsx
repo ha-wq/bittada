@@ -1,18 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/lib/auth-context";
-import { useEffect } from "react";
+import { useAuth, apiJson } from "@/lib/auth-context";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UNIVERSITIES } from "@/lib/mock-universities";
+import { University } from "@/lib/types";
 
 export default function Landing() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [unis, setUnis] = useState<University[]>([]);
 
   useEffect(() => {
-    if (!loading && user) router.push("/dashboard");
+    if (!loading && user) {
+      router.push(
+        user.role === "STUDENT" ? "/dashboard" : "/admin/universitet",
+      );
+    }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    apiJson<University[]>("/api/universities").then(setUnis).catch(() => {});
+  }, []);
 
   return (
     <div>
@@ -45,24 +54,26 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 sm:px-8 pb-24">
-        <h2 className="text-[22px] font-semibold text-ink mb-6">
-          Platformada {UNIVERSITIES.length}+ universitet
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {UNIVERSITIES.map((u) => (
-            <div
-              key={u.id}
-              className="aspect-square rounded-md bg-surface-soft flex items-center justify-center flex-col p-3 text-center"
-            >
-              <span className="text-3xl font-bold text-ink/20">{u.logo}</span>
-              <span className="text-[12px] font-medium text-muted mt-1 line-clamp-2">
-                {u.shortName}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {unis.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-8 pb-24">
+          <h2 className="text-[22px] font-semibold text-ink mb-6">
+            Platformada {unis.length}+ universitet
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {unis.map((u) => (
+              <div
+                key={u.id}
+                className="aspect-square rounded-md bg-surface-soft flex items-center justify-center flex-col p-3 text-center"
+              >
+                <span className="text-3xl font-bold text-ink/20">{u.logo}</span>
+                <span className="text-[12px] font-medium text-muted mt-1 line-clamp-2">
+                  {u.shortName}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="bg-surface-soft py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">

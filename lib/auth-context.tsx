@@ -7,140 +7,82 @@ import {
   useEffect,
   useState,
 } from "react";
-import { Application, Profile, User } from "./types";
+import { Profile, User } from "./types";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  refresh: () => Promise<void>;
   signUp: (data: {
     fullName: string;
     email: string;
     password: string;
     dateOfBirth: string;
-  }) => User;
-  signIn: (email: string, password: string) => User | null;
-  signOut: () => void;
-  updateProfile: (profile: Profile) => void;
-  addApplication: (app: Application) => void;
-  updateApplication: (id: string, patch: Partial<Application>) => void;
-  removeApplication: (id: string) => void;
+  }) => Promise<User>;
+  signIn: (email: string, password: string) => Promise<User>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const STORAGE_KEY = "bittada:user";
-const ACCOUNTS_KEY = "bittada:accounts";
 
-type StoredAccount = { email: string; password: string; user: User };
+type ApiInit = {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+};
 
-function loadAccounts(): StoredAccount[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveAccounts(accounts: StoredAccount[]) {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+async function apiJson<T>(url: string, init?: ApiInit): Promise<T> {
+  const { body, method, headers } = init || {};
+  const res = await fetch(url, {
+    method: method || (body !== undefined ? "POST" : "GET"),
+    headers: {
+      "content-type": "application/json",
+      ...(headers || {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `So'rovda xatolik (${res.status})`);
+  return data as T;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {}
-    setLoading(false);
-  }, []);
-
-  const persist = useCallback((u: User | null) => {
-    setUser(u);
-    if (u) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-      const accounts = loadAccounts();
-      const idx = accounts.findIndex((a) => a.user.id === u.id);
-      if (idx >= 0) {
-        accounts[idx].user = u;
-        saveAccounts(accounts);
-      }
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+      const u = await apiJson<User | null>("/api/me");
+      setUser(u);
+    } catch {
+      setUser(null);
     }
   }, []);
 
-  const signUp: AuthContextValue["signUp"] = (data) => {
-    const accounts = loadAccounts();
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      fullName: data.fullName,
-      email: data.email,
-      dateOfBirth: data.dateOfBirth,
-      applications: [],
-    };
-    accounts.push({ email: data.email, password: data.password, user: newUser });
-    saveAccounts(accounts);
-    persist(newUser);
-    return newUser;
+  useEffect(() => {
+    refresh().finally(() => setLoading(false));
+  }, [refresh]);
+
+  const signUp: AuthContextValue["signUp"] = async (data) => {
+    await apiJson("/api/auth/signup", { body: data });
+    await refresh();
+    return (await apiJson<User>("/api/me"))!;
   };
 
-  const signIn: AuthContextValue["signIn"] = (email, password) => {
-    const accounts = loadAccounts();
-    const acc = accounts.find(
-      (a) => a.email === email && a.password === password,
-    );
-    if (!acc) return null;
-    persist(acc.user);
-    return acc.user;
+  const signIn: AuthContextValue["signIn"] = async (email, password) => {
+    await apiJson("/api/auth/login", { body: { email, password } });
+    await refresh();
+    return (await apiJson<User>("/api/me"))!;
   };
 
-  const signOut = () => persist(null);
-
-  const updateProfile = (profile: Profile) => {
-    if (!user) return;
-    persist({ ...user, profile });
-  };
-
-  const addApplication = (app: Application) => {
-    if (!user) return;
-    persist({ ...user, applications: [...user.applications, app] });
-  };
-
-  const updateApplication = (id: string, patch: Partial<Application>) => {
-    if (!user) return;
-    persist({
-      ...user,
-      applications: user.applications.map((a) =>
-        a.id === id ? { ...a, ...patch } : a,
-      ),
-    });
-  };
-
-  const removeApplication = (id: string) => {
-    if (!user) return;
-    persist({
-      ...user,
-      applications: user.applications.filter((a) => a.id !== id),
-    });
+  const signOut = async () => {
+    await apiJson("/api/auth/logout", { method: "POST" });
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        signUp,
-        signIn,
-        signOut,
-        updateProfile,
-        addApplication,
-        updateApplication,
-        removeApplication,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, refresh, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -152,7 +94,7 @@ export function useAuth() {
   return ctx;
 }
 
-export function isProfileComplete(profile?: Profile): boolean {
+export function isProfileComplete(profile?: Profile | null): boolean {
   if (!profile) return false;
   return Boolean(
     profile.school &&
@@ -162,8 +104,10 @@ export function isProfileComplete(profile?: Profile): boolean {
       profile.address &&
       profile.passportId &&
       profile.graduationYear &&
-      profile.diplomaUploaded &&
+      profile.diploma &&
       profile.idCardFront &&
       profile.idCardBack,
   );
 }
+
+export { apiJson };

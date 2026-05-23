@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  UNIVERSITY_ADMIN
+  SUPER_ADMIN
+}
+
+enum ApplicationStatus {
+  YUBORILMAGAN
+  KORIB_CHIQILMOQDA
+  QABUL_QILINDI
+  RAD_ETILDI
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  dateOfBirth  DateTime?
+  role         Role     @default(STUDENT)
+
+  // If UNIVERSITY_ADMIN, this is the university they manage.
+  manages           University? @relation("UniversityAdmins", fields: [managesUniversityId], references: [id], onDelete: SetNull)
+  managesUniversityId String?
+
+  profile      Profile?
+  applications Application[]
+  sessions     Session[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Profile {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  school           String?
+  photo            String?
+  phone            String?
+  country          String?
+  citizenship      String?
+  address          String?
+  passportId       String?
+  graduationYear   String?
+  idCardFront      String?
+  idCardBack       String?
+  diploma          String?
+  applyingForGrant Boolean @default(false)
+
+  // Test scores stored as JSON since shape is nested and optional
+  ielts Json?
+  sat   Json?
+  dtm   Json?
+
+  updatedAt DateTime @updatedAt
+}
+
+model University {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  shortName   String
+  logo        String
+  city        String
+  address     String
+  description String
+  tuitionMin  Int
+  tuitionMax  Int
+  deadline    DateTime
+  language    String[]
+  offersFinancialAid Boolean @default(false)
+  hasEntranceExam    Boolean @default(false)
+
+  minDtm           Int?
+  minIelts         Float?
+  minSat           Int?
+  minGpa           Float?
+  requirementsNote String?
+
+  majors       Major[]
+  exams        Exam[]
+  applications Application[]
+  admins       User[] @relation("UniversityAdmins")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Major {
+  id           String   @id @default(cuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  name         String
+  partsOfDay   String[]
+  applications Application[]
+}
+
+model Application {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  majorId      String
+  major        Major    @relation(fields: [majorId], references: [id])
+
+  partOfDay         String
+  financialAid      Boolean @default(false)
+  status            ApplicationStatus @default(YUBORILMAGAN)
+  needsEntranceExam Boolean @default(false)
+
+  examRegistrationId String? @unique
+  examRegistration   ExamRegistration? @relation(fields: [examRegistrationId], references: [id], onDelete: SetNull)
+
+  submittedAt DateTime?
+  decidedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([universityId])
+}
+
+model Exam {
+  id           String   @id @default(cuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  date         DateTime
+  location     String
+  subjects     String[]
+  capacity     Int
+  price        Int      @default(0)
+  registrations ExamRegistration[]
+  createdAt DateTime @default(now())
+}
+
+model ExamRegistration {
+  id          String   @id @default(cuid())
+  examId      String
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  userId      String
+  application Application?
+  createdAt   DateTime @default(now())
+
+  @@unique([examId, userId])
+}

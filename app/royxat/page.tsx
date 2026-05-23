@@ -17,18 +17,23 @@ export default function SignUpPage() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (form.password.length < 6) {
       setError("Parol kamida 6 belgidan iborat bo'lishi kerak.");
       return;
     }
+    setSubmitting(true);
     try {
-      signUp(form);
+      await signUp(form);
       router.push("/dashboard");
-    } catch {
-      setError("Ro'yxatdan o'tishda xatolik yuz berdi.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ro'yxatdan o'tishda xatolik.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -77,8 +82,8 @@ export default function SignUpPage() {
 
         {error && <p className="text-[14px] text-error">{error}</p>}
 
-        <Button type="submit" className="w-full">
-          Hisob yaratish
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Yaratilmoqda..." : "Hisob yaratish"}
         </Button>
 
         <p className="text-[14px] text-muted text-center pt-2">

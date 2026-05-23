@@ -9,11 +9,11 @@ A Common App-style portal for Uzbek private universities. All user-facing copy i
 
 ## TL;DR for the next agent
 
-- Next.js 16 (App Router) + Tailwind v4 + TypeScript scaffold is in place and builds cleanly (`npm run build` passes, all 10 routes).
-- All 6 screens described in [PLAN.md](PLAN.md) are implemented as UI with **mock data** and **localStorage-only persistence**.
-- There is **no backend, no real auth, no real file uploads**. Everything lives in the browser.
-- Design follows [DESIGN.md](DESIGN.md) (Airbnb-inspired). Colors, radii, fonts already wired into `app/globals.css` as Tailwind v4 `@theme` tokens.
-- Read [PLAN.md](PLAN.md) first — it's the product spec. This file describes what's built vs. not.
+- Next.js 16 (App Router) + Postgres + Prisma + Tailwind v4 + TypeScript. Builds cleanly (`npm run build` passes).
+- **Real backend**: Postgres via Docker, Prisma 6 ORM, session cookies, bcrypt passwords, filesystem uploads with auth-gated download.
+- **Three roles**: `STUDENT`, `UNIVERSITY_ADMIN`, `SUPER_ADMIN`. Each has its own area.
+- **Two UI surfaces**: student app + admin panel under `/admin/*`.
+- Read [PLAN.md](PLAN.md) (product spec) and [README.md](README.md) (setup) first.
 
 ---
 
@@ -21,119 +21,130 @@ A Common App-style portal for Uzbek private universities. All user-facing copy i
 
 ```bash
 npm install
-npm run dev    # http://localhost:3000
-npm run build  # production build (passes today)
+npm run db:up      # Docker Postgres
+cp .env.example .env
+npm run db:migrate # name it "init"
+npm run db:seed    # universities + super-admin
+npm run dev
 ```
 
----
-
-## What's done
-
-### Infrastructure
-- [package.json](package.json) — Next.js 16.2.6, React 19.2, Tailwind v4, TypeScript 5
-- [app/globals.css](app/globals.css) — design tokens (`--color-primary` Rausch #ff385c, `--color-ink` #222, soft radii, Inter font with Cyrillic subset)
-- [app/layout.tsx](app/layout.tsx) — root layout in `lang="uz"`, mounts `AuthProvider` + global `Navbar`
-
-### Data & state
-- [lib/types.ts](lib/types.ts) — `User`, `Profile`, `Application`, `University`, `Major`, `ApplicationStatus`, `PartOfDay`
-- [lib/mock-universities.ts](lib/mock-universities.ts) — 6 seeded universities (Westminster, Inha, TIIAME, Ajou, MDIS, Amity) with majors, requirements, deadlines, tuition ranges. Also exports `formatSom`, `formatDate`, `PART_OF_DAY_LABEL`, `getUniversity`.
-- [lib/auth-context.tsx](lib/auth-context.tsx) — `AuthProvider` + `useAuth` hook. Persists to two `localStorage` keys:
-  - `bittada:user` — current logged-in user
-  - `bittada:accounts` — all signups (mock "database")
-  - Exports: `signUp`, `signIn`, `signOut`, `updateProfile`, `addApplication`, `updateApplication`, `removeApplication`, `isProfileComplete`
-
-### Components
-- [components/Navbar.tsx](components/Navbar.tsx) — sticky top nav. Shows nav links + account menu when signed in; shows "Kirish" / "Ro'yxatdan o'tish" when signed out.
-- [components/ui.tsx](components/ui.tsx) — `Button` (primary/secondary/tertiary/danger), `Input`, `Select`, `Textarea`, `Badge`, `Card`
-- [components/UniversityCard.tsx](components/UniversityCard.tsx) — grid card used on dashboard
-
-### Pages (all Uzbek)
-| Route | File | What it does |
-|---|---|---|
-| `/` | [app/page.tsx](app/page.tsx) | Landing — redirects to `/dashboard` if signed in |
-| `/royxat` | [app/royxat/page.tsx](app/royxat/page.tsx) | Sign up (full name, DOB, email, password) |
-| `/kirish` | [app/kirish/page.tsx](app/kirish/page.tsx) | Sign in |
-| `/dashboard` | [app/dashboard/page.tsx](app/dashboard/page.tsx) | University browser with search + filters (all / English / grant) |
-| `/universitetlar/[id]` | [app/universitetlar/[id]/page.tsx](app/universitetlar/[id]/page.tsx) | University detail + apply modal. Blocks apply if profile incomplete; routes to `/profil`. |
-| `/profil` | [app/profil/page.tsx](app/profil/page.tsx) | Profile form with completion % bar and mock file uploads (only filename stored) |
-| `/arizalar` | [app/arizalar/page.tsx](app/arizalar/page.tsx) | My Applications grouped into Ready / Needs Exam / Submitted. Multi-select + batch submit. |
-| `/imtihonlar` | [app/imtihonlar/page.tsx](app/imtihonlar/page.tsx) | Registered entrance exams (date, location, subjects) |
-
-### Apply flow logic (already wired)
-- On Apply: if `!user` → `/kirish`. If profile incomplete → modal then `/profil`. Else: select major → schedule (kunduzgi/kechki/sirtqi) → financial aid yes/no → application created with status `"yuborilmagan"`.
-- Requirements check is naive: compares `profile.dtm` and `profile.ielts` against `requirements.minDtm` / `minIelts`. If university has `hasEntranceExam` and student doesn't meet → `needsEntranceExam: true` and the app lands in the "Imtihon kerak" group.
-- Exam registration is mocked: sets `examDate` to "today + 14 days" and flips `needsEntranceExam: false`.
-- Batch submit on `/arizalar` flips selected drafts to `"korib_chiqilmoqda"`.
+Super-admin login (from `.env.example`): `admin@bittada.uz` / `changeme123` at `/admin/kirish`.
 
 ---
 
-## What's NOT done (priority order)
+## What's built
 
-### 1. Real backend (biggest gap)
-Everything is `localStorage`. To make this real:
-- Recommended: **Supabase** (auth + Postgres + storage in one) — matches [PLAN.md](PLAN.md) suggestion.
-- Tables needed: `users`, `profiles`, `universities`, `majors`, `applications`, `exam_registrations`.
-- Replace `lib/auth-context.tsx` with Supabase client calls — keep the same hook signature so pages don't need to change.
-- File uploads (diploma, DTM cert, photo) currently store only the filename string. Wire to Supabase Storage.
+### Backend
+- [prisma/schema.prisma](prisma/schema.prisma) — `User`, `Session`, `Profile`, `University`, `Major`, `Application`, `Exam`, `ExamRegistration`
+- [prisma/seed.ts](prisma/seed.ts) — bootstraps super-admin from env + 6 sample universities
+- [lib/db.ts](lib/db.ts) — Prisma client singleton
+- [lib/session.ts](lib/session.ts) — `createSession`, `getCurrentUser`, `requireUser`, `requireRole`
+- [lib/upload.ts](lib/upload.ts) — `saveUpload` with 2MB cap + MIME validation
+- [lib/api.ts](lib/api.ts) — `handle()` wrapper that turns thrown errors into proper JSON responses
+- [docker-compose.yml](docker-compose.yml) — Postgres 16
 
-### 2. University admin panel
-Universities can't manage their own data. Needed:
-- Admin auth (separate role)
-- CRUD for: their university page, majors, deadlines, requirements
-- Application inbox: view applicants, change status (Under Review → Accepted / Rejected)
-- Schedule exams + assign dates/locations
-- See [PLAN.md](PLAN.md) "Data & Role Architecture" section.
+### Student APIs
+| Method + Route | Purpose |
+|---|---|
+| `POST /api/auth/signup` | Create student account + auto-login |
+| `POST /api/auth/login` | Sign in |
+| `POST /api/auth/logout` | Destroy session |
+| `GET  /api/me` | Current user + profile + applications |
+| `GET  /api/universities` | List all unis |
+| `GET  /api/universities/[slug]` | Detail + majors + exams |
+| `PUT  /api/profile` | Upsert profile |
+| `POST /api/uploads` | Save file → returns filename |
+| `GET  /api/files/[name]` | Authed file download |
+| `GET  /api/applications` | My applications |
+| `POST /api/applications` | Create draft |
+| `DELETE /api/applications/[id]` | Remove draft |
+| `POST /api/applications/submit` | Batch submit ids → status `KORIB_CHIQILMOQDA` |
+| `POST /api/exams/[id]/register` | Register for an exam, link to application |
 
-### 3. Open questions from PLAN.md (need user input)
-- Who seeds university data initially — self-serve admins or manual?
-- Application fee per university? (no payment flow exists)
-- DTM score verification — official source integration, or self-reported?
-- Notifications (email/SMS) when status changes?
+### Admin APIs (`UNIVERSITY_ADMIN` and `SUPER_ADMIN`)
+| Route | Purpose |
+|---|---|
+| `GET/PUT /api/admin/university` | Read/write own university |
+| `GET/POST /api/admin/exams` | List + create exam slots |
+| `PUT/DELETE /api/admin/exams/[id]` | Update/delete |
+| `GET /api/admin/applications` | Submitted applications inbox |
+| `PATCH /api/admin/applications/[id]` | Set status (accepted/rejected/under-review) |
+| `GET /api/admin/applications/export` | Stream `.xlsx` |
+| `GET/POST /api/admin/users` | (super only) list + create university admins |
 
-### 4. UX gaps
+### Student pages (Uzbek)
+| Route | File |
+|---|---|
+| `/` | [app/page.tsx](app/page.tsx) |
+| `/royxat` | [app/royxat/page.tsx](app/royxat/page.tsx) |
+| `/kirish` | [app/kirish/page.tsx](app/kirish/page.tsx) |
+| `/dashboard` | [app/dashboard/page.tsx](app/dashboard/page.tsx) |
+| `/universitetlar/[id]` | [app/universitetlar/[id]/page.tsx](app/universitetlar/[id]/page.tsx) (the `id` param is actually a slug) |
+| `/profil` | [app/profil/page.tsx](app/profil/page.tsx) |
+| `/arizalar` | [app/arizalar/page.tsx](app/arizalar/page.tsx) |
+| `/imtihonlar` | [app/imtihonlar/page.tsx](app/imtihonlar/page.tsx) |
+
+### Admin pages (Uzbek)
+| Route | File |
+|---|---|
+| `/admin/kirish` | [app/admin/kirish/page.tsx](app/admin/kirish/page.tsx) — separate login |
+| `/admin/universitet` | [app/admin/universitet/page.tsx](app/admin/universitet/page.tsx) — edit own uni |
+| `/admin/imtihonlar` | [app/admin/imtihonlar/page.tsx](app/admin/imtihonlar/page.tsx) — exam CRUD |
+| `/admin/arizalar` | [app/admin/arizalar/page.tsx](app/admin/arizalar/page.tsx) — inbox + Excel export + accept/reject |
+| `/admin/super` | [app/admin/super/page.tsx](app/admin/super/page.tsx) — create uni admins |
+| `/admin/layout.tsx` | Gates the whole `/admin` tree by role |
+
+### Client state
+- [lib/auth-context.tsx](lib/auth-context.tsx) — `useAuth()` hook backed by `/api/me`. Mutations call APIs then `refresh()`. Exports `apiJson()` helper for other pages.
+
+---
+
+## What's NOT done
+
+### Security
+- No CSRF tokens (cookies are `sameSite: lax` which mitigates most cases, but state-changing requests over POST are not double-checked)
+- No rate limiting on auth / upload endpoints
+- File `GET /api/files/[name]` requires *any* signed-in user — not just the owner or the uni admin reviewing the application. Anyone authed who guesses the UUID filename can read it. Tighten by joining `Upload` to `Profile`/`Application` for proper ACL.
+- No email verification for student signup
 - No password reset flow
-- No email verification
-- No localization toggle (PLAN.md mentions Uzbek + Russian — only Uzbek exists)
-- No loading skeletons / empty states beyond basic text
-- No error toasts — errors render inline only
-- No mobile testing pass (responsive classes are written but not verified in a real browser)
-- Profile photo uploads UI exists but image is never displayed anywhere
-- No way to edit an application after creation (only remove)
+- Session tokens never rotate
 
-### 5. Code quality
-- No ESLint config (skipped during scaffold with `--no-eslint`)
-- No tests
-- No CI
-- `AGENTS.md` and `CLAUDE.md` are the create-next-app defaults — could be cleaned up
+### Functionality gaps
+- Exam registration: there's no UI yet for the student to *pick a slot*. Student-side flow goes API → success, but no page that lists open slots. Need a `/imtihonlar/[universitySlug]` page that fetches open exams and posts to `/api/exams/[id]/register`.
+- Application export: only Excel. PDF export per student profile would be useful for uni admins.
+- No notification system (email/SMS) on status changes.
+- No payment flow (exam price field exists but no checkout).
 
----
+### Code quality
+- No ESLint config (scaffold was created with `--no-eslint`).
+- No tests.
+- No CI.
+- `entranceExamSubjects` is on `Exam` but the seed doesn't carry university-level default subjects (admin must add per exam).
+- `FileUploadField` is duplicated logic-wise across pages — could move to a shared component, but currently lives only in `app/profil/page.tsx`.
 
-## Conventions to keep
-
-- **Uzbek copy.** All user-facing strings are Uzbek (Latin script). Don't introduce English UI text. Internal code (vars, types, comments) stays English.
-- **Route names are Uzbek** too: `/royxat`, `/kirish`, `/universitetlar`, `/arizalar`, `/imtihonlar`, `/profil`. Match this if adding new routes.
-- **Design tokens only.** Use Tailwind classes like `bg-primary`, `text-ink`, `border-hairline`, `rounded-md` — they're wired to [DESIGN.md](DESIGN.md). Don't hardcode hex colors in components.
-- **Mock data shape is the contract.** When wiring a real backend, keep `lib/types.ts` shapes stable so pages don't need rewrites.
-- `useAuth()` is the single source of truth for user state. Don't read `localStorage` from pages directly.
+### Production readiness
+- No HTTPS / nginx config example. Server section in README assumes proxy is provided externally.
+- No backup/restore guide for Postgres or `uploads/`.
+- File uploads are local-filesystem only — won't scale beyond a single instance. Swap to S3/MinIO before scaling out.
+- `SUPER_ADMIN_PASSWORD` in `.env.example` is `changeme123`. Document loudly that this must be rotated before going live.
 
 ---
 
-## Suggested next steps (in order)
+## Conventions
 
-1. **Decide backend.** Supabase is the lowest-friction path — set up project, port `lib/auth-context.tsx`.
-2. **Seed universities into the DB.** Move [lib/mock-universities.ts](lib/mock-universities.ts) into a seed script.
-3. **File uploads → Supabase Storage.** Wire diploma/photo/DTM cert.
-4. **Status update mechanism.** Either a basic admin route (`/admin`) or a manual DB update process for now.
-5. **Email notifications** on status change (Resend / Supabase Edge Functions).
-6. **Russian translation pass** — extract strings to a dictionary first, then add `ru.json`.
-7. **Polish: loading states, error toasts, mobile QA.**
+- **Uzbek copy and Uzbek route names.** `/royxat`, `/kirish`, `/universitetlar`, `/arizalar`, `/imtihonlar`, `/profil`, `/admin/...`. Code/vars/comments stay English.
+- **Design tokens only.** Use Tailwind classes like `bg-primary`, `text-ink`, `border-hairline`. Don't hardcode hex.
+- **`apiJson()` is the only fetch wrapper** on the client. Always pass body as a plain object — it'll be JSON-stringified.
+- **Server: throw to fail.** Inside `handle(async () => ...)`, throw `new Error("msg")` for 400s, throw `AuthError` for 401/403. The wrapper returns proper JSON.
+- **Status enum is uppercase** (`KORIB_CHIQILMOQDA`) — driven by Prisma. Translate via `APPLICATION_STATUS_LABEL` in `lib/format.ts`.
 
 ---
 
 ## Files worth reading first
 
-1. [PLAN.md](PLAN.md) — product spec (what we're building)
-2. [DESIGN.md](DESIGN.md) — design system reference (Airbnb-style)
-3. [lib/types.ts](lib/types.ts) — data shapes
-4. [lib/auth-context.tsx](lib/auth-context.tsx) — state layer to replace with real backend
-5. [app/universitetlar/[id]/page.tsx](app/universitetlar/[id]/page.tsx) — most complex page (apply flow lives here)
+1. [PLAN.md](PLAN.md) — product spec
+2. [README.md](README.md) — setup
+3. [prisma/schema.prisma](prisma/schema.prisma) — data shapes
+4. [lib/session.ts](lib/session.ts) — auth pattern
+5. [lib/auth-context.tsx](lib/auth-context.tsx) — client state
+6. [app/admin/universitet/page.tsx](app/admin/universitet/page.tsx) — most complex admin form

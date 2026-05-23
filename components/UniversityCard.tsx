@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { University } from "@/lib/types";
-import { formatDate, formatSom } from "@/lib/mock-universities";
+import { formatDate, formatSom } from "@/lib/format";
 
 export function UniversityCard({ uni }: { uni: University }) {
   return (
     <Link
-      href={`/universitetlar/${uni.id}`}
+      href={`/universitetlar/${uni.slug}`}
       className="group block bg-canvas rounded-md overflow-hidden transition-all hover:shadow-card"
     >
       <div className="aspect-[4/3] bg-gradient-to-br from-surface-strong to-surface-soft rounded-md flex items-center justify-center relative overflow-hidden">

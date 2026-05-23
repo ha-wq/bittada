@@ -12,15 +12,24 @@ export default function SignInPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const u = signIn(form.email, form.password);
-    if (!u) {
-      setError("Email yoki parol noto'g'ri.");
-      return;
+    setSubmitting(true);
+    try {
+      const u = await signIn(form.email, form.password);
+      if (u.role === "UNIVERSITY_ADMIN" || u.role === "SUPER_ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Email yoki parol noto'g'ri.");
+    } finally {
+      setSubmitting(false);
     }
-    router.push("/dashboard");
   };
 
   return (
@@ -50,8 +59,8 @@ export default function SignInPage() {
 
         {error && <p className="text-[14px] text-error">{error}</p>}
 
-        <Button type="submit" className="w-full">
-          Kirish
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Kirilmoqda..." : "Kirish"}
         </Button>
 
         <p className="text-[14px] text-muted text-center pt-2">

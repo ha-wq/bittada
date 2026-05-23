@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { isProfileComplete, useAuth } from "@/lib/auth-context";
+import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
 import { DtmScore, IeltsScore, Profile, SatScore } from "@/lib/types";
 import { Button, Input, Select } from "@/components/ui";
 
@@ -36,29 +36,36 @@ const EMPTY_DTM: DtmScore = {
 };
 
 const EMPTY: Profile = {
-  school: "",
-  phone: "",
+  school: null,
+  photo: null,
+  phone: null,
   country: "O'zbekiston",
   citizenship: "O'zbekiston",
-  address: "",
-  passportId: "",
-  graduationYear: "",
+  address: null,
+  passportId: null,
+  graduationYear: null,
+  idCardFront: null,
+  idCardBack: null,
+  diploma: null,
   applyingForGrant: false,
-  diplomaUploaded: false,
+  ielts: null,
+  sat: null,
+  dtm: null,
 };
 
 export default function ProfilePage() {
-  const { user, loading, updateProfile } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const router = useRouter();
   const [form, setForm] = useState<Profile>(EMPTY);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/kirish");
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (user?.profile) setForm(user.profile);
+    if (user?.profile) setForm({ ...EMPTY, ...user.profile });
   }, [user]);
 
   if (loading || !user) return null;
@@ -66,11 +73,17 @@ export default function ProfilePage() {
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaving(true);
+    try {
+      await apiJson("/api/profile", { method: "PUT", body: form });
+      await refresh();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const complete = isProfileComplete(form);
@@ -82,9 +95,9 @@ export default function ProfilePage() {
     form.address,
     form.passportId,
     form.graduationYear,
-    form.diplomaUploaded ? "x" : "",
-    form.idCardFront ? "x" : "",
-    form.idCardBack ? "x" : "",
+    form.diploma,
+    form.idCardFront,
+    form.idCardBack,
   ];
   const filled = requiredFields.filter(Boolean).length;
   const percent = Math.round((filled / requiredFields.length) * 100);
@@ -109,9 +122,7 @@ export default function ProfilePage() {
           </div>
         </div>
         {complete && (
-          <span className="text-[13px] font-semibold text-success">
-            ✓ To'liq
-          </span>
+          <span className="text-[13px] font-semibold text-success">✓ To'liq</span>
         )}
       </div>
 
@@ -120,6 +131,7 @@ export default function ProfilePage() {
           <div className="space-y-4">
             <FileUploadField
               label="Profil rasmi"
+              kind="image"
               accept="image/jpeg,image/png"
               acceptLabel="JPG yoki PNG"
               instructions={[
@@ -134,7 +146,7 @@ export default function ProfilePage() {
             <Input
               label="Telefon raqami"
               name="phone"
-              value={form.phone}
+              value={form.phone || ""}
               required
               onChange={(e) => set("phone", e.target.value)}
               placeholder="+998 90 123 45 67"
@@ -143,14 +155,14 @@ export default function ProfilePage() {
               <Input
                 label="Mamlakat"
                 name="country"
-                value={form.country}
+                value={form.country || ""}
                 required
                 onChange={(e) => set("country", e.target.value)}
               />
               <Input
                 label="Fuqarolik"
                 name="citizenship"
-                value={form.citizenship}
+                value={form.citizenship || ""}
                 required
                 onChange={(e) => set("citizenship", e.target.value)}
               />
@@ -158,7 +170,7 @@ export default function ProfilePage() {
             <Input
               label="Yashash manzili"
               name="address"
-              value={form.address}
+              value={form.address || ""}
               required
               onChange={(e) => set("address", e.target.value)}
               placeholder="Toshkent, Chilonzor tumani, 12-mavze, 5-uy"
@@ -166,7 +178,7 @@ export default function ProfilePage() {
             <Input
               label="Passport ID (AA1234567)"
               name="passportId"
-              value={form.passportId}
+              value={form.passportId || ""}
               required
               onChange={(e) => set("passportId", e.target.value.toUpperCase())}
             />
@@ -174,6 +186,7 @@ export default function ProfilePage() {
               <FileUploadField
                 label="ID karta — old tomoni"
                 required
+                kind="image"
                 accept="image/jpeg,image/png"
                 acceptLabel="JPG yoki PNG"
                 value={form.idCardFront}
@@ -182,6 +195,7 @@ export default function ProfilePage() {
               <FileUploadField
                 label="ID karta — orqa tomoni"
                 required
+                kind="image"
                 accept="image/jpeg,image/png"
                 acceptLabel="JPG yoki PNG"
                 value={form.idCardBack}
@@ -196,7 +210,7 @@ export default function ProfilePage() {
             <Input
               label="Maktab nomi"
               name="school"
-              value={form.school}
+              value={form.school || ""}
               required
               onChange={(e) => set("school", e.target.value)}
               placeholder="Toshkent, 110-maktab"
@@ -204,7 +218,7 @@ export default function ProfilePage() {
             <Select
               label="Bitirgan yil"
               name="graduationYear"
-              value={form.graduationYear}
+              value={form.graduationYear || ""}
               onChange={(e) => set("graduationYear", e.target.value)}
               required
             >
@@ -220,16 +234,16 @@ export default function ProfilePage() {
               required
               accept="application/pdf,image/jpeg,image/png"
               acceptLabel="PDF, JPG yoki PNG"
-              value={form.diplomaUploaded ? "diplom.pdf" : undefined}
-              onChange={(v) => set("diplomaUploaded", !!v)}
+              value={form.diploma}
+              onChange={(v) => set("diploma", v)}
             />
           </div>
         </Section>
 
         <Section title="Test natijalari">
           <p className="text-[14px] text-muted -mt-2 mb-4">
-            Hammasi ixtiyoriy. Sizda bor testlarni qo'shing — har biri
-            qism-ballarini saqlaydi.
+            Hammasi ixtiyoriy. Sizda bor testlarni qo'shing — har biri qism-ballarini
+            saqlaydi.
           </p>
 
           <div className="space-y-3">
@@ -238,13 +252,10 @@ export default function ProfilePage() {
               hint="O'zbekiston Davlat Test Markazi"
               active={!!form.dtm}
               onAdd={() => set("dtm", EMPTY_DTM)}
-              onRemove={() => set("dtm", undefined)}
+              onRemove={() => set("dtm", null)}
             >
               {form.dtm && (
-                <DtmFields
-                  value={form.dtm}
-                  onChange={(v) => set("dtm", v)}
-                />
+                <DtmFields value={form.dtm} onChange={(v) => set("dtm", v)} />
               )}
             </TestBlock>
 
@@ -253,7 +264,7 @@ export default function ProfilePage() {
               hint="Ingliz tili — Listening, Reading, Writing, Speaking"
               active={!!form.ielts}
               onAdd={() => set("ielts", EMPTY_IELTS)}
-              onRemove={() => set("ielts", undefined)}
+              onRemove={() => set("ielts", null)}
             >
               {form.ielts && (
                 <IeltsFields
@@ -268,13 +279,10 @@ export default function ProfilePage() {
               hint="Scholastic Assessment Test — Math + Reading/Writing"
               active={!!form.sat}
               onAdd={() => set("sat", EMPTY_SAT)}
-              onRemove={() => set("sat", undefined)}
+              onRemove={() => set("sat", null)}
             >
               {form.sat && (
-                <SatFields
-                  value={form.sat}
-                  onChange={(v) => set("sat", v)}
-                />
+                <SatFields value={form.sat} onChange={(v) => set("sat", v)} />
               )}
             </TestBlock>
           </div>
@@ -300,11 +308,11 @@ export default function ProfilePage() {
         </Section>
 
         <div className="flex items-center gap-4 pt-4 border-t border-hairline">
-          <Button type="submit">Saqlash</Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saqlanmoqda..." : "Saqlash"}
+          </Button>
           {saved && (
-            <span className="text-[14px] text-success font-medium">
-              ✓ Saqlandi
-            </span>
+            <span className="text-[14px] text-success font-medium">✓ Saqlandi</span>
           )}
         </div>
       </form>
@@ -417,8 +425,8 @@ function IeltsFields({
         label="IELTS sertifikati"
         accept="application/pdf,image/jpeg,image/png"
         acceptLabel="PDF, JPG yoki PNG"
-        value={value.certificate}
-        onChange={(v) => set("certificate", v)}
+        value={value.certificate || null}
+        onChange={(v) => set("certificate", v || undefined)}
       />
     </div>
   );
@@ -459,8 +467,8 @@ function SatFields({
         label="SAT score report"
         accept="application/pdf,image/jpeg,image/png"
         acceptLabel="PDF, JPG yoki PNG"
-        value={value.certificate}
-        onChange={(v) => set("certificate", v)}
+        value={value.certificate || null}
+        onChange={(v) => set("certificate", v || undefined)}
       />
     </div>
   );
@@ -543,8 +551,8 @@ function DtmFields({
         label="DTM sertifikati"
         accept="application/pdf,image/jpeg,image/png"
         acceptLabel="PDF, JPG yoki PNG"
-        value={value.certificate}
-        onChange={(v) => onChange({ ...value, certificate: v })}
+        value={value.certificate || null}
+        onChange={(v) => onChange({ ...value, certificate: v || undefined })}
       />
     </div>
   );
@@ -558,20 +566,23 @@ function FileUploadField({
   accept,
   acceptLabel,
   instructions,
+  kind = "doc",
   maxSizeMb = 2,
 }: {
   label: string;
-  value?: string;
-  onChange: (v: string | undefined) => void;
+  value?: string | null;
+  onChange: (v: string | null) => void;
   required?: boolean;
   accept?: string;
   acceptLabel?: string;
   instructions?: string[];
+  kind?: "doc" | "image";
   maxSizeMb?: number;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleFile = (file: File | undefined) => {
+  const handleFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
     if (file.size > maxSizeMb * 1024 * 1024) {
@@ -585,7 +596,20 @@ function FileUploadField({
         return;
       }
     }
-    onChange(file.name);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("kind", kind);
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Yuklashda xatolik");
+      onChange(data.name);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Yuklashda xatolik");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -609,15 +633,20 @@ function FileUploadField({
 
       {value ? (
         <div className="flex items-center justify-between border border-hairline rounded-md px-4 py-3">
-          <div className="flex items-center gap-2 text-[14px] text-ink min-w-0">
+          <a
+            href={`/api/files/${value}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 text-[14px] text-ink min-w-0 hover:underline"
+          >
             <span>📄</span>
             <span className="truncate">{value}</span>
-          </div>
+          </a>
           <button
             type="button"
             onClick={() => {
               setError(null);
-              onChange(undefined);
+              onChange(null);
             }}
             className="text-[13px] text-error font-medium hover:underline flex-shrink-0 ml-3"
           >
@@ -625,15 +654,20 @@ function FileUploadField({
           </button>
         </div>
       ) : (
-        <label className="flex items-center justify-center border border-dashed border-hairline rounded-md py-6 cursor-pointer hover:border-ink hover:bg-surface-soft transition-colors">
+        <label
+          className={`flex items-center justify-center border border-dashed border-hairline rounded-md py-6 cursor-pointer hover:border-ink hover:bg-surface-soft transition-colors ${
+            uploading ? "opacity-60 pointer-events-none" : ""
+          }`}
+        >
           <input
             type="file"
             accept={accept}
             className="hidden"
+            disabled={uploading}
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
           <span className="text-[14px] text-muted">
-            + Fayl yuklash uchun bosing
+            {uploading ? "Yuklanmoqda..." : "+ Fayl yuklash uchun bosing"}
           </span>
         </label>
       )}
@@ -642,4 +676,3 @@ function FileUploadField({
     </div>
   );
 }
-

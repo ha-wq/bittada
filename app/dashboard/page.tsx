@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/lib/auth-context";
-import { UNIVERSITIES } from "@/lib/mock-universities";
+import { useAuth, apiJson } from "@/lib/auth-context";
+import { University } from "@/lib/types";
 import { UniversityCard } from "@/components/UniversityCard";
 
 export default function DashboardPage() {
@@ -12,13 +12,21 @@ export default function DashboardPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "english" | "grant">("all");
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loadingUnis, setLoadingUnis] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) router.push("/kirish");
   }, [user, loading, router]);
 
+  useEffect(() => {
+    apiJson<University[]>("/api/universities")
+      .then(setUniversities)
+      .finally(() => setLoadingUnis(false));
+  }, []);
+
   const filtered = useMemo(() => {
-    return UNIVERSITIES.filter((u) => {
+    return universities.filter((u) => {
       if (
         query &&
         !u.name.toLowerCase().includes(query.toLowerCase()) &&
@@ -29,15 +37,15 @@ export default function DashboardPage() {
       if (filter === "grant" && !u.offersFinancialAid) return false;
       return true;
     });
-  }, [query, filter]);
+  }, [query, filter, universities]);
 
   if (loading || !user) return null;
 
   const submittedCount = user.applications.filter(
-    (a) => a.status !== "yuborilmagan",
+    (a) => a.status !== "YUBORILMAGAN",
   ).length;
   const draftCount = user.applications.filter(
-    (a) => a.status === "yuborilmagan",
+    (a) => a.status === "YUBORILMAGAN",
   ).length;
 
   return (
@@ -117,16 +125,22 @@ export default function DashboardPage() {
         Universitetlar ({filtered.length})
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filtered.map((u) => (
-          <UniversityCard key={u.id} uni={u} />
-        ))}
-      </div>
+      {loadingUnis ? (
+        <div className="text-center py-16 text-muted">Yuklanmoqda...</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filtered.map((u) => (
+              <UniversityCard key={u.id} uni={u} />
+            ))}
+          </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-16 text-muted">
-          Hech qanday universitet topilmadi.
-        </div>
+          {filtered.length === 0 && (
+            <div className="text-center py-16 text-muted">
+              Hech qanday universitet topilmadi.
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -3,36 +3,30 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, apiJson } from "@/lib/auth-context";
 import {
+  APPLICATION_STATUS_LABEL,
   formatDate,
-  getUniversity,
   PART_OF_DAY_LABEL,
-} from "@/lib/mock-universities";
+} from "@/lib/format";
 import { Application, ApplicationStatus } from "@/lib/types";
 import { Badge, Button } from "@/components/ui";
-
-const STATUS_LABEL: Record<ApplicationStatus, string> = {
-  yuborilmagan: "Yuborilmagan",
-  korib_chiqilmoqda: "Ko'rib chiqilmoqda",
-  qabul_qilindi: "Qabul qilindi",
-  rad_etildi: "Rad etildi",
-};
 
 const STATUS_VARIANT: Record<
   ApplicationStatus,
   "neutral" | "warning" | "success" | "error"
 > = {
-  yuborilmagan: "neutral",
-  korib_chiqilmoqda: "warning",
-  qabul_qilindi: "success",
-  rad_etildi: "error",
+  YUBORILMAGAN: "neutral",
+  KORIB_CHIQILMOQDA: "warning",
+  QABUL_QILINDI: "success",
+  RAD_ETILDI: "error",
 };
 
 export default function ApplicationsPage() {
-  const { user, loading, updateApplication, removeApplication } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/kirish");
@@ -41,13 +35,13 @@ export default function ApplicationsPage() {
   if (loading || !user) return null;
 
   const drafts = user.applications.filter(
-    (a) => a.status === "yuborilmagan" && !a.needsEntranceExam,
+    (a) => a.status === "YUBORILMAGAN" && !a.needsEntranceExam,
   );
   const examNeeded = user.applications.filter(
-    (a) => a.status === "yuborilmagan" && a.needsEntranceExam,
+    (a) => a.status === "YUBORILMAGAN" && a.needsEntranceExam,
   );
   const submitted = user.applications.filter(
-    (a) => a.status !== "yuborilmagan",
+    (a) => a.status !== "YUBORILMAGAN",
   );
 
   const toggle = (id: string) => {
@@ -59,11 +53,22 @@ export default function ApplicationsPage() {
     });
   };
 
-  const submitAll = () => {
-    selected.forEach((id) =>
-      updateApplication(id, { status: "korib_chiqilmoqda" }),
-    );
-    setSelected(new Set());
+  const submitAll = async () => {
+    setBusy(true);
+    try {
+      await apiJson("/api/applications/submit", {
+        body: { ids: Array.from(selected) },
+      });
+      setSelected(new Set());
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeApp = async (id: string) => {
+    await apiJson(`/api/applications/${id}`, { method: "DELETE" });
+    await refresh();
   };
 
   return (
@@ -80,9 +85,7 @@ export default function ApplicationsPage() {
 
       {user.applications.length === 0 && (
         <div className="bg-surface-soft rounded-md p-12 text-center">
-          <p className="text-[16px] text-muted">
-            Hozircha hech qanday ariza yo'q.
-          </p>
+          <p className="text-[16px] text-muted">Hozircha hech qanday ariza yo'q.</p>
           <Link
             href="/dashboard"
             className="inline-flex h-11 items-center px-5 mt-4 rounded-md bg-primary text-white font-medium hover:bg-primary-active"
@@ -105,20 +108,19 @@ export default function ApplicationsPage() {
                 selectable
                 selected={selected.has(a.id)}
                 onToggle={() => toggle(a.id)}
-                onRemove={() => removeApplication(a.id)}
+                onRemove={() => removeApp(a.id)}
               />
             ))}
           </div>
           {selected.size > 0 && (
             <div className="mt-5 sticky bottom-4 bg-ink text-white rounded-md p-4 flex items-center justify-between shadow-card">
-              <span className="text-[14px]">
-                {selected.size} ta ariza tanlandi
-              </span>
+              <span className="text-[14px]">{selected.size} ta ariza tanlandi</span>
               <Button
                 onClick={submitAll}
+                disabled={busy}
                 className="bg-primary text-white hover:bg-primary-active border-0"
               >
-                Yuborish
+                {busy ? "Yuborilmoqda..." : "Yuborish"}
               </Button>
             </div>
           )}
@@ -128,26 +130,12 @@ export default function ApplicationsPage() {
       {examNeeded.length > 0 && (
         <Block title={`Imtihon talab qilinadi (${examNeeded.length})`}>
           <p className="text-[14px] text-muted mb-3">
-            Sizning natijalaringiz bu universitetlarning talablariga to'g'ri
-            kelmaydi. Ichki imtihonga yoziling.
+            Sizning natijalaringiz bu universitetlarning talablariga to'g'ri kelmaydi.
+            Universitet imtihon kunlarini e'lon qilganda yozilishingiz mumkin.
           </p>
           <div className="space-y-3">
             {examNeeded.map((a) => (
-              <AppRow
-                key={a.id}
-                app={a}
-                onRegisterExam={() => {
-                  const examDate = new Date(
-                    Date.now() + 14 * 24 * 60 * 60 * 1000,
-                  ).toISOString();
-                  updateApplication(a.id, {
-                    examRegistered: true,
-                    examDate,
-                    needsEntranceExam: false,
-                  });
-                }}
-                onRemove={() => removeApplication(a.id)}
-              />
+              <AppRow key={a.id} app={a} onRemove={() => removeApp(a.id)} />
             ))}
           </div>
         </Block>
@@ -181,19 +169,14 @@ function AppRow({
   selected,
   onToggle,
   onRemove,
-  onRegisterExam,
 }: {
   app: Application;
   selectable?: boolean;
   selected?: boolean;
   onToggle?: () => void;
   onRemove?: () => void;
-  onRegisterExam?: () => void;
 }) {
-  const uni = getUniversity(app.universityId);
-  if (!uni) return null;
-  const major = uni.majors.find((m) => m.id === app.majorId);
-
+  const uni = app.university;
   return (
     <div className="border border-hairline rounded-md p-5 flex items-start gap-4">
       {selectable && (
@@ -211,41 +194,36 @@ function AppRow({
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <Link
-              href={`/universitetlar/${uni.id}`}
+              href={`/universitetlar/${uni.slug}`}
               className="text-[16px] font-semibold text-ink hover:underline"
             >
               {uni.name}
             </Link>
             <div className="text-[14px] text-muted mt-0.5">
-              {major?.name} · {PART_OF_DAY_LABEL[app.partOfDay]}
+              {app.major.name} · {PART_OF_DAY_LABEL[app.partOfDay]}
               {app.financialAid && " · Grant"}
             </div>
-            {app.examRegistered && app.examDate && (
+            {app.examRegistration && (
               <div className="text-[13px] text-success mt-1">
-                ✓ Imtihonga yozilgan: {formatDate(app.examDate)}
+                ✓ Imtihonga yozilgan: {formatDate(app.examRegistration.exam.date)}
               </div>
             )}
           </div>
           <Badge variant={STATUS_VARIANT[app.status]}>
-            {STATUS_LABEL[app.status]}
+            {APPLICATION_STATUS_LABEL[app.status]}
           </Badge>
         </div>
 
-        <div className="flex items-center gap-3 mt-3">
-          {onRegisterExam && (
-            <Button size="sm" onClick={onRegisterExam}>
-              Imtihonga yozilish
-            </Button>
-          )}
-          {onRemove && app.status === "yuborilmagan" && (
+        {onRemove && app.status === "YUBORILMAGAN" && (
+          <div className="flex items-center gap-3 mt-3">
             <button
               onClick={onRemove}
               className="text-[13px] text-muted hover:text-error underline"
             >
               O'chirish
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

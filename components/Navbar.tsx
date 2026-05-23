@@ -5,11 +5,22 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useState } from "react";
 
-const PROTECTED_LINKS = [
+const STUDENT_LINKS = [
   { href: "/dashboard", label: "Universitetlar" },
   { href: "/arizalar", label: "Mening arizalarim" },
   { href: "/imtihonlar", label: "Imtihonlar" },
   { href: "/profil", label: "Profil" },
+];
+
+const ADMIN_LINKS = [
+  { href: "/admin/universitet", label: "Universitet" },
+  { href: "/admin/imtihonlar", label: "Imtihonlar" },
+  { href: "/admin/arizalar", label: "Arizalar" },
+];
+
+const SUPER_ADMIN_LINKS = [
+  ...ADMIN_LINKS,
+  { href: "/admin/super", label: "Foydalanuvchilar" },
 ];
 
 export function Navbar() {
@@ -18,26 +29,47 @@ export function Navbar() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    await signOut();
     setMenuOpen(false);
     router.push("/");
   };
 
+  // Hide nav on admin login page
+  if (pathname === "/admin/kirish") return null;
+
+  const links =
+    user?.role === "SUPER_ADMIN"
+      ? SUPER_ADMIN_LINKS
+      : user?.role === "UNIVERSITY_ADMIN"
+        ? ADMIN_LINKS
+        : STUDENT_LINKS;
+
+  const isAdmin = user?.role === "UNIVERSITY_ADMIN" || user?.role === "SUPER_ADMIN";
+
   return (
     <header className="sticky top-0 z-30 bg-canvas border-b border-hairline">
       <div className="mx-auto max-w-7xl px-4 sm:px-8 h-20 flex items-center justify-between gap-6">
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2">
+        <Link
+          href={user ? (isAdmin ? "/admin/universitet" : "/dashboard") : "/"}
+          className="flex items-center gap-2"
+        >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white font-bold text-lg">
             B
           </span>
           <span className="text-xl font-semibold tracking-tight">bittada</span>
+          {isAdmin && (
+            <span className="ml-2 text-[11px] font-bold uppercase tracking-wide bg-ink text-white px-2 py-0.5 rounded">
+              Admin
+            </span>
+          )}
         </Link>
 
         {user && (
           <nav className="hidden md:flex items-center gap-1">
-            {PROTECTED_LINKS.map((link) => {
-              const active = pathname === link.href || pathname.startsWith(link.href + "/");
+            {links.map((link) => {
+              const active =
+                pathname === link.href || pathname.startsWith(link.href + "/");
               return (
                 <Link
                   key={link.href}
@@ -81,7 +113,7 @@ export function Navbar() {
                       <div className="text-sm text-muted truncate">{user.email}</div>
                     </div>
                     <div className="md:hidden border-b border-hairline-soft py-2">
-                      {PROTECTED_LINKS.map((link) => (
+                      {links.map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}
