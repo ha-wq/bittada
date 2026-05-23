@@ -12,7 +12,7 @@ const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
 };
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
     // Any authenticated user can fetch — owner check would require linking files to users.
     // For now keep simple: must be signed in.
@@ -35,9 +35,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ nam
   const ext = safe.split(".").pop()?.toLowerCase() || "";
   const mime = MIME_BY_EXT[ext] || "application/octet-stream";
   const data = await readFile(filePath);
+
+  const isDownload = req.nextUrl.searchParams.get("download") === "1";
+  const disposition = isDownload
+    ? `attachment; filename="${safe}"`
+    : `inline; filename="${safe}"`;
+
   return new Response(new Uint8Array(data), {
     headers: {
       "content-type": mime,
+      "content-disposition": disposition,
       "cache-control": "private, max-age=3600",
     },
   });

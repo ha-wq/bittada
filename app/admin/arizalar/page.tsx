@@ -21,13 +21,26 @@ type AdminApp = {
       school: string | null;
       passportId: string | null;
       graduationYear: string | null;
-      ielts: { overall?: string } | null;
-      dtm: { total?: string } | null;
-      sat: { total?: string } | null;
+      photo: string | null;
+      idCardFront: string | null;
+      idCardBack: string | null;
+      diploma: string | null;
+      ielts: { overall?: string; certificate?: string } | null;
+      dtm: { total?: string; certificate?: string } | null;
+      sat: { total?: string; certificate?: string } | null;
+      milliySertifikat: {
+        subjects?: { subject: string; score: string; certificate?: string }[];
+      } | null;
     } | null;
   };
   major: { name: string };
 };
+
+type FileRef = { label: string; file: string };
+
+function isImage(name: string) {
+  return /\.(jpe?g|png|webp|gif)$/i.test(name);
+}
 
 const VARIANT: Record<ApplicationStatus, "neutral" | "warning" | "success" | "error"> = {
   YUBORILMAGAN: "neutral",
@@ -131,25 +144,140 @@ export default function AdminApplicationsPage() {
                     )}
 
                     {p && (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-[13px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mt-4 text-[13px]">
                         {p.phone && <Stat label="Telefon" v={p.phone} />}
-                        {p.passportId && <Stat label="Passport" v={p.passportId} />}
-                        {p.school && <Stat label="Maktab" v={p.school} />}
+                        {(p.passportId || p.idCardFront || p.idCardBack) && (
+                          <Stat
+                            label="Passport"
+                            v={p.passportId || "—"}
+                            files={[
+                              p.idCardFront && {
+                                label: "ID karta (old)",
+                                file: p.idCardFront,
+                              },
+                              p.idCardBack && {
+                                label: "ID karta (orqa)",
+                                file: p.idCardBack,
+                              },
+                            ].filter(Boolean) as FileRef[]}
+                          />
+                        )}
+                        {(p.school || p.diploma) && (
+                          <Stat
+                            label="Maktab"
+                            v={p.school || "—"}
+                            files={
+                              p.diploma
+                                ? [{ label: "Diplom / attestat", file: p.diploma }]
+                                : []
+                            }
+                          />
+                        )}
                         {p.graduationYear && (
                           <Stat label="Bitirgan" v={p.graduationYear} />
                         )}
-                        {p.dtm?.total && <Stat label="DTM" v={p.dtm.total} />}
-                        {p.ielts?.overall && <Stat label="IELTS" v={p.ielts.overall} />}
-                        {p.sat?.total && <Stat label="SAT" v={p.sat.total} />}
+                        {(p.dtm?.total || p.dtm?.certificate) && (
+                          <Stat
+                            label="DTM"
+                            v={p.dtm?.total || "—"}
+                            files={
+                              p.dtm?.certificate
+                                ? [{ label: "DTM sertifikati", file: p.dtm.certificate }]
+                                : []
+                            }
+                          />
+                        )}
+                        {(p.ielts?.overall || p.ielts?.certificate) && (
+                          <Stat
+                            label="IELTS"
+                            v={p.ielts?.overall || "—"}
+                            files={
+                              p.ielts?.certificate
+                                ? [
+                                    {
+                                      label: "IELTS sertifikati",
+                                      file: p.ielts.certificate,
+                                    },
+                                  ]
+                                : []
+                            }
+                          />
+                        )}
+                        {(p.sat?.total || p.sat?.certificate) && (
+                          <Stat
+                            label="SAT"
+                            v={p.sat?.total || "—"}
+                            files={
+                              p.sat?.certificate
+                                ? [{ label: "SAT sertifikati", file: p.sat.certificate }]
+                                : []
+                            }
+                          />
+                        )}
+                        {p.milliySertifikat?.subjects?.map((s, i) =>
+                          s.subject || s.score || s.certificate ? (
+                            <Stat
+                              key={i}
+                              label={`Milliy — ${s.subject || "—"}`}
+                              v={s.score || "—"}
+                              files={
+                                s.certificate
+                                  ? [
+                                      {
+                                        label: "Sertifikat",
+                                        file: s.certificate,
+                                      },
+                                    ]
+                                  : []
+                              }
+                            />
+                          ) : null,
+                        )}
                       </div>
                     )}
                   </div>
-                  <Badge variant={VARIANT[a.status]}>
-                    {APPLICATION_STATUS_LABEL[a.status]}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge variant={VARIANT[a.status]}>
+                      {APPLICATION_STATUS_LABEL[a.status]}
+                    </Badge>
+                    {p?.photo && (
+                      <div className="relative group">
+                        <a
+                          href={`/api/files/${p.photo}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Rasmni ko'rish"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/api/files/${p.photo}`}
+                            alt={a.user.fullName}
+                            className="w-32 h-32 rounded-md object-cover border border-hairline"
+                          />
+                        </a>
+                        <a
+                          href={`/api/files/${p.photo}?download=1`}
+                          download={p.photo}
+                          className="absolute bottom-1 right-1 inline-flex items-center justify-center w-6 h-6 rounded-md bg-ink/80 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Yuklab olish"
+                          aria-label="Profil rasmini yuklab olish"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                            <path
+                              d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-2 mt-4 flex-wrap items-center">
                   {a.status !== "QABUL_QILINDI" && (
                     <Button
                       size="sm"
@@ -176,6 +304,22 @@ export default function AdminApplicationsPage() {
                       Qaytarish
                     </Button>
                   )}
+                  <a
+                    href={`/api/admin/applications/${a.id}/export`}
+                    className="ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-hairline text-[13px] font-medium text-ink hover:border-ink hover:bg-surface-soft"
+                    title="Talaba ma'lumotlari va fayllarini ZIP shaklida yuklab olish"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    ZIP yuklab olish
+                  </a>
                 </div>
               </div>
             );
@@ -186,11 +330,74 @@ export default function AdminApplicationsPage() {
   );
 }
 
-function Stat({ label, v }: { label: string; v: string }) {
+function Stat({
+  label,
+  v,
+  files = [],
+}: {
+  label: string;
+  v: string;
+  files?: FileRef[];
+}) {
+  const hasFiles = files.length > 0;
   return (
-    <div>
+    <div
+      className={`group/stat relative -mx-2 px-2 py-1 rounded-md ${
+        hasFiles ? "hover:bg-surface-soft" : ""
+      }`}
+    >
       <div className="text-muted text-[12px]">{label}</div>
-      <div className="text-ink font-medium">{v}</div>
+      <div className="flex items-center gap-2 min-h-[20px]">
+        {v && <div className="text-ink font-medium">{v}</div>}
+        {hasFiles && (
+          <div className="flex items-center gap-1 opacity-0 group-hover/stat:opacity-100 transition-opacity">
+            {files.map((f) => (
+              <FileActions key={f.file} label={f.label} file={f.file} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function FileActions({ label, file }: { label: string; file: string }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 border border-hairline rounded-md bg-canvas">
+      <a
+        href={`/api/files/${file}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center justify-center w-6 h-6 text-muted hover:text-ink hover:bg-surface-soft rounded-l-md"
+        title={`Ko'rish: ${label}`}
+        aria-label={`${label} ni ko'rish`}
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+          <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      </a>
+      <a
+        href={`/api/files/${file}?download=1`}
+        download={file}
+        className="inline-flex items-center justify-center w-6 h-6 text-muted hover:text-ink hover:bg-surface-soft rounded-r-md border-l border-hairline"
+        title={`Yuklab olish: ${label}`}
+        aria-label={`${label} ni yuklab olish`}
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </a>
+    </span>
   );
 }
