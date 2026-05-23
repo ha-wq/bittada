@@ -1,6 +1,6 @@
 export type PartOfDay = "kunduzgi" | "kechki" | "sirtqi";
 
-export type Role = "STUDENT" | "UNIVERSITY_ADMIN" | "SUPER_ADMIN";
+export type Role = "STUDENT" | "PARENT" | "UNIVERSITY_ADMIN" | "SUPER_ADMIN";
 
 export type ApplicationStatus =
   | "YUBORILMAGAN"
@@ -132,14 +132,23 @@ export type Profile = {
   sat: SatScore | null;
   dtm: DtmScore | null;
   milliySertifikat: MilliySertifikat | null;
+  // Scouting
+  scoutingEnabled?: boolean;
+  scoutCities?: string[];
+  scoutKeywords?: string[];
+  scoutPartsOfDay?: string[];
+  scoutLanguages?: string[];
+  scoutWillingTest?: boolean;
+  scoutTuitionMax?: number | null;
 };
 
 export type User = {
   id: string;
   fullName: string;
-  email: string;
+  email: string | null;
   role: Role;
   managesUniversityId: string | null;
+  telegramUsername?: string | null;
   profile: Profile | null;
   applications: Application[];
 };

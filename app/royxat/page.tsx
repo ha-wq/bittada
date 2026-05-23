@@ -9,6 +9,7 @@ import { Button, Input } from "@/components/ui";
 export default function SignUpPage() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const [role, setRole] = useState<"STUDENT" | "PARENT">("STUDENT");
   const [form, setForm] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -28,8 +29,8 @@ export default function SignUpPage() {
     }
     setSubmitting(true);
     try {
-      await signUp(form);
-      router.push("/dashboard");
+      const u = await signUp({ ...form, role });
+      router.push(u.role === "PARENT" ? "/ota-ona" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ro'yxatdan o'tishda xatolik.");
     } finally {
@@ -45,6 +46,31 @@ export default function SignUpPage() {
       </p>
 
       <form onSubmit={submit} className="mt-8 space-y-4">
+        <div>
+          <div className="text-[14px] font-medium text-ink mb-2">Hisob turi</div>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { v: "STUDENT", l: "Talaba", d: "Men o'zim topshiraman" },
+                { v: "PARENT", l: "Ota-ona", d: "Farzandim uchun" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setRole(opt.v)}
+                className={`text-left rounded-md border p-3 transition-colors ${
+                  role === opt.v
+                    ? "border-ink bg-surface-soft"
+                    : "border-hairline hover:border-ink"
+                }`}
+              >
+                <div className="text-[14px] font-semibold text-ink">{opt.l}</div>
+                <div className="text-[12px] text-muted">{opt.d}</div>
+              </button>
+            ))}
+          </div>
+        </div>
         <Input
           label="To'liq ism"
           name="fullName"

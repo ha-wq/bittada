@@ -22,6 +22,8 @@ export default function SignInPage() {
       const u = await signIn(form.email, form.password);
       if (u.role === "UNIVERSITY_ADMIN" || u.role === "SUPER_ADMIN") {
         router.push("/admin");
+      } else if (u.role === "PARENT") {
+        router.push("/ota-ona");
       } else {
         router.push("/dashboard");
       }

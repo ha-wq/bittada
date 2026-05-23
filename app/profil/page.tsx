@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
+import { ScoutingCard } from "@/components/ScoutingCard";
+import { ClaimCodeCard } from "@/components/ClaimCodeCard";
 import {
   DtmScore,
   IeltsScore,
@@ -72,6 +74,14 @@ const EMPTY: Profile = {
 };
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilePageInner />
+    </Suspense>
+  );
+}
+
+function ProfilePageInner() {
   const { user, loading, refresh } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -366,6 +376,15 @@ export default function ProfilePage() {
           )}
         </div>
       </form>
+
+      <div className="mt-8 space-y-6">
+        <ScoutingCard
+          profile={user.profile}
+          complete={isProfileComplete(user.profile)}
+          onChanged={refresh}
+        />
+        <ClaimCodeCard />
+      </div>
     </div>
   );
 }

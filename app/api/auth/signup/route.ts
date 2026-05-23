@@ -7,7 +7,7 @@ import { createSession } from "@/lib/session";
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const body = await req.json();
-    const { fullName, email, password, dateOfBirth } = body;
+    const { fullName, email, password, dateOfBirth, role } = body;
 
     if (!fullName || !email || !password) {
       throw new Error("Barcha maydonlarni to'ldiring.");
@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
     if (password.length < 6) {
       throw new Error("Parol kamida 6 belgidan iborat bo'lishi kerak.");
     }
+
+    // Only self-service roles are allowed at signup.
+    const accountRole = role === "PARENT" ? "PARENT" : "STUDENT";
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) throw new Error("Bu email allaqachon ro'yxatdan o'tgan.");
@@ -25,8 +28,9 @@ export async function POST(req: NextRequest) {
         passwordHash: await bcrypt.hash(password, 10),
         fullName,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-        role: "STUDENT",
-        profile: { create: {} },
+        role: accountRole,
+        // Parents don't need a student profile.
+        ...(accountRole === "STUDENT" ? { profile: { create: {} } } : {}),
       },
     });
 

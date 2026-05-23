@@ -24,6 +24,8 @@ const SUPER_ADMIN_LINKS = [
   { href: "/admin/super", label: "Foydalanuvchilar" },
 ];
 
+const PARENT_LINKS = [{ href: "/ota-ona", label: "Farzandlarim" }];
+
 export function Navbar() {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
@@ -36,15 +38,18 @@ export function Navbar() {
     router.push("/");
   };
 
-  // Hide nav on admin login page
+  // Hide nav on admin login page and inside the Telegram Mini App.
   if (pathname === "/admin/kirish") return null;
+  if (pathname === "/tg" || pathname.startsWith("/tg/")) return null;
 
   const links =
     user?.role === "SUPER_ADMIN"
       ? SUPER_ADMIN_LINKS
       : user?.role === "UNIVERSITY_ADMIN"
         ? ADMIN_LINKS
-        : STUDENT_LINKS;
+        : user?.role === "PARENT"
+          ? PARENT_LINKS
+          : STUDENT_LINKS;
 
   const isAdmin = user?.role === "UNIVERSITY_ADMIN" || user?.role === "SUPER_ADMIN";
 
@@ -60,7 +65,15 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-8 h-[76px] flex items-center justify-between gap-6">
         <Link
-          href={user ? (isAdmin ? "/admin/universitet" : "/dashboard") : "/"}
+          href={
+            user
+              ? isAdmin
+                ? "/admin/universitet"
+                : user.role === "PARENT"
+                  ? "/ota-ona"
+                  : "/dashboard"
+              : "/"
+          }
           className="flex items-center gap-2"
         >
           <Wordmark size={26} />

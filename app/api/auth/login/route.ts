@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
-    if (!user) throw new Error("Email yoki parol noto'g'ri.");
+    if (!user || !user.passwordHash) throw new Error("Email yoki parol noto'g'ri.");
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) throw new Error("Email yoki parol noto'g'ri.");

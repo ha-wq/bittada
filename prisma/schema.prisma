@@ -9,8 +9,14 @@ datasource db {
 
 enum Role {
   STUDENT
+  PARENT
   UNIVERSITY_ADMIN
   SUPER_ADMIN
+}
+
+enum LinkStatus {
+  PENDING
+  APPROVED
 }
 
 enum ApplicationStatus {
@@ -22,21 +28,59 @@ enum ApplicationStatus {
 
 model User {
   id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
+  // Nullable so Telegram-only students (no email/password) can exist.
+  email        String?  @unique
+  passwordHash String?
   fullName     String
   dateOfBirth  DateTime?
   role         Role     @default(STUDENT)
 
+  // Telegram Mini App identity (linked on first Telegram login).
+  telegramId       String? @unique
+  telegramUsername String?
+
+  // Short shareable code a STUDENT generates so a PARENT can request to link.
+  claimCode          String?   @unique
+  claimCodeExpiresAt DateTime?
+
   // If UNIVERSITY_ADMIN, this is the university they manage.
   manages           University? @relation("UniversityAdmins", fields: [managesUniversityId], references: [id], onDelete: SetNull)
   managesUniversityId String?
+
+  // Parent ↔ child links.
+  parentLinks  ParentLink[] @relation("ParentLinks") // links where this user is the parent
+  childLinks   ParentLink[] @relation("ChildLinks")  // links where this user is the child
 
   profile      Profile?
   applications Application[]
   sessions     Session[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// A guardian/parent linked to a student account (after the student approves).
+model ParentLink {
+  id        String     @id @default(cuid())
+  parentId  String
+  parent    User       @relation("ParentLinks", fields: [parentId], references: [id], onDelete: Cascade)
+  childId   String
+  child     User       @relation("ChildLinks", fields: [childId], references: [id], onDelete: Cascade)
+  status    LinkStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+
+  @@unique([parentId, childId])
+  @@index([childId])
+  @@index([parentId])
+}
+
+// Dedupe log so scheduled jobs (e.g. deadline reminders) don't double-send.
+model NotificationLog {
+  id        String   @id @default(cuid())
+  kind      String
+  refId     String
+  createdAt DateTime @default(now())
+
+  @@unique([kind, refId])
 }
 
 model Session {
@@ -73,6 +117,15 @@ model Profile {
   sat              Json?
   dtm              Json?
   milliySertifikat Json?
+
+  // ── Scouting ── auto-apply to universities matching these filters.
+  scoutingEnabled  Boolean  @default(false)
+  scoutCities      String[] @default([])
+  scoutKeywords    String[] @default([]) // major-name keywords
+  scoutPartsOfDay  String[] @default([])
+  scoutLanguages   String[] @default([])
+  scoutWillingTest Boolean  @default(false)
+  scoutTuitionMax  Int?
 
   updatedAt DateTime @updatedAt
 }

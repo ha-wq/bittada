@@ -50,7 +50,7 @@ export default function AdminUniversityPage() {
   const addMajor = () =>
     set("majors", [
       ...uni.majors,
-      { id: `tmp-${Date.now()}`, name: "", partsOfDay: ["kunduzgi"] },
+      { id: `tmp-${Date.now()}`, name: "", partsOfDay: ["kunduzgi"], tuitionFee: 0 },
     ]);
 
   const removeMajor = (i: number) =>
@@ -251,6 +251,14 @@ export default function AdminUniversityPage() {
                   label={`Mutaxassislik ${i + 1}`}
                   value={m.name}
                   onChange={(e) => setMajor(i, { name: e.target.value })}
+                />
+                <Input
+                  label="O'qish narxi (so'm / yil)"
+                  type="number"
+                  value={m.tuitionFee}
+                  onChange={(e) =>
+                    setMajor(i, { tuitionFee: Number(e.target.value) })
+                  }
                 />
                 <div>
                   <div className="text-[13px] font-medium text-muted mb-1.5">

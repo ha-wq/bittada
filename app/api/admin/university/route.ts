@@ -54,6 +54,7 @@ export async function PUT(req: NextRequest) {
         id?: string;
         name: string;
         partsOfDay?: string[];
+        tuitionFee?: number;
       }[];
       const existing = await prisma.major.findMany({
         where: { universityId: uni.id },
@@ -68,7 +69,11 @@ export async function PUT(req: NextRequest) {
         if (isReal(m.id) && existing.some((e) => e.id === m.id)) {
           await prisma.major.update({
             where: { id: m.id as string },
-            data: { name: m.name, partsOfDay: m.partsOfDay || [] },
+            data: {
+              name: m.name,
+              partsOfDay: m.partsOfDay || [],
+              tuitionFee: Number(m.tuitionFee) || 0,
+            },
           });
         } else {
           await prisma.major.create({
@@ -76,6 +81,7 @@ export async function PUT(req: NextRequest) {
               universityId: uni.id,
               name: m.name,
               partsOfDay: m.partsOfDay || [],
+              tuitionFee: Number(m.tuitionFee) || 0,
             },
           });
         }

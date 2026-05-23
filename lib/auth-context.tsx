@@ -18,6 +18,7 @@ type AuthContextValue = {
     email: string;
     password: string;
     dateOfBirth: string;
+    role?: "STUDENT" | "PARENT";
   }) => Promise<User>;
   signIn: (email: string, password: string) => Promise<User>;
   signOut: () => Promise<void>;
