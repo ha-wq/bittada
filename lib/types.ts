@@ -90,6 +90,8 @@ export type Profile = {
   ielts?: IeltsScore;
   sat?: SatScore;
   dtm?: DtmScore;
+  idCardFront?: string;
+  idCardBack?: string;
   applyingForGrant: boolean;
   diplomaUploaded: boolean;
 };

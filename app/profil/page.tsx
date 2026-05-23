@@ -83,6 +83,8 @@ export default function ProfilePage() {
     form.passportId,
     form.graduationYear,
     form.diplomaUploaded ? "x" : "",
+    form.idCardFront ? "x" : "",
+    form.idCardBack ? "x" : "",
   ];
   const filled = requiredFields.filter(Boolean).length;
   const percent = Math.round((filled / requiredFields.length) * 100);
@@ -118,6 +120,14 @@ export default function ProfilePage() {
           <div className="space-y-4">
             <FileUploadField
               label="Profil rasmi"
+              accept="image/jpeg,image/png"
+              acceptLabel="JPG yoki PNG"
+              instructions={[
+                "Oq yoki ochiq fonda olingan rasm",
+                "Yuz to'g'ridan ko'rinib turishi kerak — quyoshli ko'zoynak va bosh kiyimsiz",
+                "So'nggi 6 oy ichida olingan, passport uslubidagi rasm",
+                "Yuzning kamida 70 foizi rasm maydonini egallashi kerak",
+              ]}
               value={form.photo}
               onChange={(v) => set("photo", v)}
             />
@@ -160,6 +170,24 @@ export default function ProfilePage() {
               required
               onChange={(e) => set("passportId", e.target.value.toUpperCase())}
             />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <FileUploadField
+                label="ID karta — old tomoni"
+                required
+                accept="image/jpeg,image/png"
+                acceptLabel="JPG yoki PNG"
+                value={form.idCardFront}
+                onChange={(v) => set("idCardFront", v)}
+              />
+              <FileUploadField
+                label="ID karta — orqa tomoni"
+                required
+                accept="image/jpeg,image/png"
+                acceptLabel="JPG yoki PNG"
+                value={form.idCardBack}
+                onChange={(v) => set("idCardBack", v)}
+              />
+            </div>
           </div>
         </Section>
 
@@ -188,8 +216,10 @@ export default function ProfilePage() {
               ))}
             </Select>
             <FileUploadField
-              label="Diplom / Attestat (PDF, JPG)"
+              label="Diplom / Attestat"
               required
+              accept="application/pdf,image/jpeg,image/png"
+              acceptLabel="PDF, JPG yoki PNG"
               value={form.diplomaUploaded ? "diplom.pdf" : undefined}
               onChange={(v) => set("diplomaUploaded", !!v)}
             />
@@ -384,7 +414,9 @@ function IeltsFields({
         />
       </div>
       <FileUploadField
-        label="IELTS sertifikati (PDF, JPG)"
+        label="IELTS sertifikati"
+        accept="application/pdf,image/jpeg,image/png"
+        acceptLabel="PDF, JPG yoki PNG"
         value={value.certificate}
         onChange={(v) => set("certificate", v)}
       />
@@ -424,7 +456,9 @@ function SatFields({
         />
       </div>
       <FileUploadField
-        label="SAT score report (PDF, JPG)"
+        label="SAT score report"
+        accept="application/pdf,image/jpeg,image/png"
+        acceptLabel="PDF, JPG yoki PNG"
         value={value.certificate}
         onChange={(v) => set("certificate", v)}
       />
@@ -506,7 +540,9 @@ function DtmFields({
       </div>
 
       <FileUploadField
-        label="DTM sertifikati (PDF, JPG)"
+        label="DTM sertifikati"
+        accept="application/pdf,image/jpeg,image/png"
+        acceptLabel="PDF, JPG yoki PNG"
         value={value.certificate}
         onChange={(v) => onChange({ ...value, certificate: v })}
       />
@@ -519,27 +555,71 @@ function FileUploadField({
   value,
   onChange,
   required,
+  accept,
+  acceptLabel,
+  instructions,
+  maxSizeMb = 2,
 }: {
   label: string;
   value?: string;
   onChange: (v: string | undefined) => void;
   required?: boolean;
+  accept?: string;
+  acceptLabel?: string;
+  instructions?: string[];
+  maxSizeMb?: number;
 }) {
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return;
+    setError(null);
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      setError(`Fayl hajmi ${maxSizeMb}MB dan oshmasligi kerak.`);
+      return;
+    }
+    if (accept) {
+      const allowed = accept.split(",").map((s) => s.trim());
+      if (!allowed.includes(file.type)) {
+        setError(`Faqat ${acceptLabel || accept} formatdagi fayllar qabul qilinadi.`);
+        return;
+      }
+    }
+    onChange(file.name);
+  };
+
   return (
     <div>
-      <div className="block text-[14px] font-medium text-ink mb-1.5">
-        {label} {required && <span className="text-error">*</span>}
+      <div className="flex items-baseline justify-between mb-1.5">
+        <div className="block text-[14px] font-medium text-ink">
+          {label} {required && <span className="text-error">*</span>}
+        </div>
+        <div className="text-[12px] text-muted">
+          {acceptLabel ? `${acceptLabel} · ` : ""}max {maxSizeMb}MB
+        </div>
       </div>
+
+      {instructions && instructions.length > 0 && (
+        <ul className="mb-2 space-y-0.5 text-[13px] text-muted list-disc list-inside">
+          {instructions.map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      )}
+
       {value ? (
         <div className="flex items-center justify-between border border-hairline rounded-md px-4 py-3">
-          <div className="flex items-center gap-2 text-[14px] text-ink">
+          <div className="flex items-center gap-2 text-[14px] text-ink min-w-0">
             <span>📄</span>
-            <span>{value}</span>
+            <span className="truncate">{value}</span>
           </div>
           <button
             type="button"
-            onClick={() => onChange(undefined)}
-            className="text-[13px] text-error font-medium hover:underline"
+            onClick={() => {
+              setError(null);
+              onChange(undefined);
+            }}
+            className="text-[13px] text-error font-medium hover:underline flex-shrink-0 ml-3"
           >
             O'chirish
           </button>
@@ -548,17 +628,18 @@ function FileUploadField({
         <label className="flex items-center justify-center border border-dashed border-hairline rounded-md py-6 cursor-pointer hover:border-ink hover:bg-surface-soft transition-colors">
           <input
             type="file"
+            accept={accept}
             className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onChange(f.name);
-            }}
+            onChange={(e) => handleFile(e.target.files?.[0])}
           />
           <span className="text-[14px] text-muted">
             + Fayl yuklash uchun bosing
           </span>
         </label>
       )}
+
+      {error && <p className="text-[13px] text-error mt-1.5">{error}</p>}
     </div>
   );
 }
+

@@ -162,6 +162,8 @@ export function isProfileComplete(profile?: Profile): boolean {
       profile.address &&
       profile.passportId &&
       profile.graduationYear &&
-      profile.diplomaUploaded,
+      profile.diplomaUploaded &&
+      profile.idCardFront &&
+      profile.idCardBack,
   );
 }
