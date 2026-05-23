@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth, apiJson } from "@/lib/auth-context";
+import { UniLogo } from "@/components/UniLogo";
 import {
   APPLICATION_STATUS_LABEL,
   formatDate,
@@ -187,8 +188,13 @@ function AppRow({
           className="w-5 h-5 mt-1 accent-primary"
         />
       )}
-      <div className="h-14 w-14 rounded-md bg-surface-strong flex items-center justify-center flex-shrink-0">
-        <span className="text-2xl font-bold text-ink/30">{uni.logo}</span>
+      <div className="h-14 w-14 rounded-md bg-surface-strong flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <UniLogo
+          logo={uni.logo}
+          alt={uni.name}
+          className="w-full h-full object-cover"
+          textClassName="text-2xl font-bold text-ink/30"
+        />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-3 flex-wrap">

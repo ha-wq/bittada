@@ -5,6 +5,7 @@ import { useAuth, apiJson } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { University } from "@/lib/types";
+import { UniLogo } from "@/components/UniLogo";
 
 export default function Landing() {
   const { user, loading } = useAuth();
@@ -74,7 +75,12 @@ export default function Landing() {
                 className="aspect-square rounded-md bg-surface-soft flex items-center justify-center flex-col p-3 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-card animate-fade-in-up"
                 style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}
               >
-                <span className="text-3xl font-bold text-ink/20">{u.logo}</span>
+                <UniLogo
+                  logo={u.logo}
+                  alt={u.shortName}
+                  className="w-12 h-12 rounded-md object-cover"
+                  textClassName="text-3xl font-bold text-ink/20"
+                />
                 <span className="text-[12px] font-medium text-muted mt-1 line-clamp-2">
                   {u.shortName}
                 </span>

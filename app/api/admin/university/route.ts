@@ -25,6 +25,7 @@ export async function PUT(req: NextRequest) {
     const data: Record<string, unknown> = {
       name: uniData.name,
       shortName: uniData.shortName,
+      ...(uniData.logo ? { logo: uniData.logo } : {}),
       city: uniData.city,
       address: uniData.address,
       description: uniData.description,

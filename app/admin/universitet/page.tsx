@@ -8,9 +8,10 @@ import { Button, Input, Select, Textarea } from "@/components/ui";
 const ALL_PARTS: PartOfDay[] = ["kunduzgi", "kechki", "sirtqi"];
 const ALL_LANGS = ["O'zbek", "Rus", "Ingliz"];
 
-type FormUni = Omit<University, "id" | "slug" | "logo" | "majors" | "deadline"> & {
+type FormUni = Omit<University, "id" | "slug" | "majors" | "deadline"> & {
   deadline: string;
   majors: Major[];
+  logo: string;
 };
 
 export default function AdminUniversityPage() {
@@ -83,6 +84,10 @@ export default function AdminUniversityPage() {
       </p>
 
       <form onSubmit={submit} className="mt-8 space-y-6">
+        <LogoUploader
+          value={uni.logo}
+          onChange={(v) => set("logo", v)}
+        />
         <Input
           label="To'liq nom"
           value={uni.name}
@@ -304,6 +309,97 @@ export default function AdminUniversityPage() {
           )}
         </div>
       </form>
+    </div>
+  );
+}
+
+function LogoUploader({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setErr(null);
+    if (file.size > 2 * 1024 * 1024) {
+      setErr("Fayl hajmi 2MB dan oshmasligi kerak.");
+      return;
+    }
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setErr("Faqat JPG yoki PNG.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("kind", "image");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Yuklashda xatolik");
+      onChange(data.name);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Yuklashda xatolik");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // The DB field may hold: an uploaded filename (e.g. "abc.png"),
+  // a public path ("/foo.png"), or a short text fallback like "W".
+  const isImage =
+    !!value &&
+    (value.startsWith("/") || /\.(jpe?g|png|webp|svg)$/i.test(value));
+  const src = !value
+    ? null
+    : value.startsWith("/")
+      ? value
+      : `/api/files/${value}`;
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <div className="text-[14px] font-medium text-ink">Universitet logosi</div>
+        <div className="text-[12px] text-muted">JPG yoki PNG · max 2MB</div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="w-24 h-24 rounded-md border border-hairline bg-surface-soft flex items-center justify-center overflow-hidden flex-shrink-0">
+          {isImage && src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt="" className="w-full h-full object-cover" />
+          ) : value ? (
+            <span className="text-3xl font-bold text-ink/30">{value}</span>
+          ) : (
+            <span className="text-[12px] text-muted">Yo&apos;q</span>
+          )}
+        </div>
+        <div className="flex-1">
+          <label
+            className={`inline-flex items-center h-10 px-4 rounded-md border border-hairline text-[14px] font-medium text-ink hover:border-ink hover:bg-surface-soft cursor-pointer ${
+              uploading ? "opacity-60 pointer-events-none" : ""
+            }`}
+          >
+            <input
+              type="file"
+              accept="image/jpeg,image/png"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+            {uploading
+              ? "Yuklanmoqda..."
+              : isImage
+                ? "Logoni almashtirish"
+                : "Logo yuklash"}
+          </label>
+          {err && <p className="text-[13px] text-error mt-1.5">{err}</p>}
+        </div>
+      </div>
     </div>
   );
 }

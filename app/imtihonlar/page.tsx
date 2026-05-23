@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { formatDateTime } from "@/lib/format";
+import { UniLogo } from "@/components/UniLogo";
 
 export default function ExamsPage() {
   const { user, loading } = useAuth();
@@ -51,10 +52,13 @@ export default function ExamsPage() {
           {examsWithUni.map(({ reg, university }) => (
             <div key={reg.id} className="border border-hairline rounded-md p-6">
               <div className="flex items-start gap-4">
-                <div className="h-14 w-14 rounded-md bg-surface-strong flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl font-bold text-ink/30">
-                    {university.logo}
-                  </span>
+                <div className="h-14 w-14 rounded-md bg-surface-strong flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <UniLogo
+                    logo={university.logo}
+                    alt={university.name}
+                    className="w-full h-full object-cover"
+                    textClassName="text-2xl font-bold text-ink/30"
+                  />
                 </div>
                 <div className="flex-1">
                   <h2 className="text-[18px] font-semibold text-ink">

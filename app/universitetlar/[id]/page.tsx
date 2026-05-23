@@ -9,6 +9,7 @@ import {
   PART_OF_DAY_LABEL,
 } from "@/lib/format";
 import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
+import { UniLogo } from "@/components/UniLogo";
 import { PartOfDay, University } from "@/lib/types";
 import { Badge, Button } from "@/components/ui";
 
@@ -88,7 +89,12 @@ export default function UniversityDetailPage({
       <div className="grid lg:grid-cols-[1fr_360px] gap-10">
         <div>
           <div className="aspect-[16/8] bg-gradient-to-br from-surface-strong to-surface-soft rounded-md flex items-center justify-center relative overflow-hidden mb-6">
-            <span className="text-9xl font-bold text-ink/15">{uni.logo}</span>
+            <UniLogo
+              logo={uni.logo}
+              alt={uni.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              textClassName="text-9xl font-bold text-ink/15"
+            />
             <span className="absolute top-4 left-4 bg-canvas px-3 py-1.5 rounded-full text-[12px] font-semibold shadow-card">
               {uni.shortName}
             </span>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { University } from "@/lib/types";
 import { formatDate, formatSom } from "@/lib/format";
+import { UniLogo } from "@/components/UniLogo";
 
 export function UniversityCard({ uni }: { uni: University }) {
   return (
@@ -9,7 +10,12 @@ export function UniversityCard({ uni }: { uni: University }) {
       className="group block bg-canvas rounded-md overflow-hidden transition-all hover:shadow-card"
     >
       <div className="aspect-[4/3] bg-gradient-to-br from-surface-strong to-surface-soft rounded-md flex items-center justify-center relative overflow-hidden">
-        <span className="text-7xl font-bold text-ink/15">{uni.logo}</span>
+        <UniLogo
+          logo={uni.logo}
+          alt={uni.name}
+          className="absolute inset-0 w-full h-full object-cover"
+          textClassName="text-7xl font-bold text-ink/15"
+        />
         <span className="absolute top-3 left-3 bg-canvas/95 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-ink shadow-card">
           {uni.shortName}
         </span>
