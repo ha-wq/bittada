@@ -1,0 +1,11 @@
+# Public hostname is provided via the SITE_ADDRESS env var (see .env).
+# Caddy automatically provisions + renews a Let's Encrypt certificate for it.
+{$SITE_ADDRESS} {
+	encode gzip zstd
+	reverse_proxy app:3000
+
+	# Allow profile photos / ID scans / diplomas up to a few MB.
+	request_body {
+		max_size 12MB
+	}
+}
