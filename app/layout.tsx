@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: "Bittada — O'zbekiston xususiy universitetlariga yagona ariza",
   description:
     "Bittada — O'zbekistondagi xususiy universitetlarga bitta joydan ariza topshirish platformasi.",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

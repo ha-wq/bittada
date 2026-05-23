@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Ultra&amp;display=swap');
+    </style>
+  </defs>
+  <rect width="32" height="32" rx="6" fill="#8b1a2e"/>
+  <text font-family="'Ultra', serif" font-size="24" fill="#ffffff" x="16" y="16" text-anchor="middle" dominant-baseline="central" paint-order="stroke" stroke="#ffffff" stroke-width="0.8">1</text>
+</svg>

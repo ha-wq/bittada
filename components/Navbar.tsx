@@ -54,9 +54,8 @@ export function Navbar() {
           href={user ? (isAdmin ? "/admin/universitet" : "/dashboard") : "/"}
           className="flex items-center gap-2"
         >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white font-bold text-lg">
-            B
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.svg" alt="" width={36} height={36} className="h-9 w-9 rounded-md" />
           <span className="text-xl font-semibold tracking-tight">bittada</span>
           {isAdmin && (
             <span className="ml-2 text-[11px] font-bold uppercase tracking-wide bg-ink text-white px-2 py-0.5 rounded">
