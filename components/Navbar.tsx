@@ -8,6 +8,7 @@ import { Wordmark } from "@/components/Wordmark";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Universitetlar" },
+  { href: "/tavsiya", label: "AI tavsiya" },
   { href: "/arizalar", label: "Mening arizalarim" },
   { href: "/imtihonlar", label: "Imtihonlar" },
   { href: "/profil", label: "Profil" },
