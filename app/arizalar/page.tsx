@@ -8,9 +8,10 @@ import { UniLogo } from "@/components/UniLogo";
 import {
   APPLICATION_STATUS_LABEL,
   formatDate,
+  formatSom,
   PART_OF_DAY_LABEL,
 } from "@/lib/format";
-import { Application, ApplicationStatus } from "@/lib/types";
+import { Application, ApplicationStatus, Exam } from "@/lib/types";
 import { Badge, Button } from "@/components/ui";
 
 const STATUS_VARIANT: Record<
@@ -28,6 +29,7 @@ export default function ApplicationsPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [examModalApp, setExamModalApp] = useState<Application | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push("/kirish");
@@ -136,7 +138,9 @@ export default function ApplicationsPage() {
           </p>
           <div className="space-y-3">
             {examNeeded.map((a) => (
-              <AppRow key={a.id} app={a} blocked onRemove={() => removeApp(a.id)} />
+              <AppRow key={a.id} app={a} blocked
+                onRegisterExam={() => setExamModalApp(a)}
+                onRemove={() => removeApp(a.id)} />
             ))}
           </div>
         </Block>
@@ -150,6 +154,14 @@ export default function ApplicationsPage() {
             ))}
           </div>
         </Block>
+      )}
+
+      {examModalApp && (
+        <ExamPickerModal
+          app={examModalApp}
+          onClose={() => setExamModalApp(null)}
+          onSuccess={async () => { await refresh(); setExamModalApp(null); }}
+        />
       )}
     </div>
   );
@@ -171,6 +183,7 @@ function AppRow({
   blocked,
   onToggle,
   onRemove,
+  onRegisterExam,
 }: {
   app: Application;
   selectable?: boolean;
@@ -178,6 +191,7 @@ function AppRow({
   blocked?: boolean;
   onToggle?: () => void;
   onRemove?: () => void;
+  onRegisterExam?: () => void;
 }) {
   const uni = app.university;
   return (
@@ -222,17 +236,142 @@ function AppRow({
           </Badge>
         </div>
 
-        {onRemove && app.status === "YUBORILMAGAN" && (
+        {app.status === "YUBORILMAGAN" && (onRemove || (blocked && !app.examRegistration && onRegisterExam)) && (
           <div className="flex items-center gap-3 mt-3">
-            <button
-              onClick={onRemove}
-              className="text-[13px] text-muted hover:text-error underline"
-            >
-              O'chirish
-            </button>
+            {blocked && !app.examRegistration && onRegisterExam && (
+              <button
+                onClick={onRegisterExam}
+                className="text-[13px] font-medium text-primary hover:underline"
+              >
+                Imtihonga yozilish →
+              </button>
+            )}
+            {onRemove && (
+              <button
+                onClick={onRemove}
+                className="text-[13px] text-muted hover:text-error underline"
+              >
+                O'chirish
+              </button>
+            )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-canvas rounded-xl max-w-lg w-full p-6 shadow-card max-h-[90vh] overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ExamPickerModal({
+  app,
+  onClose,
+  onSuccess,
+}: {
+  app: Application;
+  onClose: () => void;
+  onSuccess: () => Promise<void>;
+}) {
+  const [exams, setExams] = useState<Exam[] | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState<string>("");
+  const [registering, setRegistering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiJson<{ exams: Exam[] } & Record<string, unknown>>(`/api/universities/${app.university.slug}`)
+      .then((uni) => {
+        const upcoming = (uni.exams ?? []).filter((e) => new Date(e.date) > new Date());
+        setExams(upcoming);
+        if (upcoming.length > 0) setSelectedExamId(upcoming[0].id);
+      })
+      .catch(() => setExams([]));
+  }, [app.university.slug]);
+
+  const register = async () => {
+    if (!selectedExamId) return;
+    setRegistering(true);
+    setError(null);
+    try {
+      await apiJson(`/api/exams/${selectedExamId}/register`, {
+        body: { applicationId: app.id },
+      });
+      await onSuccess();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Xatolik yuz berdi.");
+      setRegistering(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose}>
+      <h2 className="text-[20px] font-bold text-ink">Imtihon vaqtini tanlang</h2>
+      <p className="text-[14px] text-muted mt-1">{app.university.name}</p>
+
+      <div className="mt-5">
+        {exams === null && (
+          <p className="text-[14px] text-muted">Yuklanmoqda...</p>
+        )}
+        {exams?.length === 0 && (
+          <div className="bg-surface-soft rounded-lg px-4 py-6 text-center">
+            <p className="text-[14px] text-muted">Hozircha ochiq imtihon vaqtlari yo'q.</p>
+            <p className="text-[13px] text-muted mt-1">Universitet e'lon qilganda bu yerda ko'rinadi.</p>
+          </div>
+        )}
+        {exams && exams.length > 0 && (
+          <div className="space-y-2">
+            {exams.map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => setSelectedExamId(e.id)}
+                className={`w-full text-left border rounded-lg p-4 transition-colors ${
+                  selectedExamId === e.id
+                    ? "border-primary bg-primary/[0.04]"
+                    : "border-hairline hover:border-ink/30"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[15px] font-semibold text-ink">{formatDate(e.date)}</div>
+                    <div className="text-[13px] text-muted mt-0.5">📍 {e.location}</div>
+                    {e.subjects.length > 0 && (
+                      <div className="text-[13px] text-muted mt-0.5">
+                        {e.subjects.join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    {e.price > 0 && (
+                      <div className="text-[14px] font-semibold text-ink">{formatSom(e.price)}</div>
+                    )}
+                    <div className="text-[12px] text-muted mt-0.5">{e.capacity} o'rin</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {error && <p className="text-[13px] text-error mt-3">{error}</p>}
+
+      <div className="flex gap-3 mt-5">
+        <Button variant="secondary" onClick={onClose}>Bekor qilish</Button>
+        {exams && exams.length > 0 && (
+          <Button onClick={register} disabled={registering || !selectedExamId} className="flex-1">
+            {registering ? "Yozilmoqda..." : "Yozilish"}
+          </Button>
+        )}
+      </div>
+    </Modal>
   );
 }

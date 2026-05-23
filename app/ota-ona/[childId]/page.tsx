@@ -48,7 +48,19 @@ export default function ChildDetailPage({
       <Link href="/ota-ona" className="text-[14px] text-muted">
         ← Farzandlarim
       </Link>
-      <h1 className="text-[26px] font-bold text-ink mt-2">
+
+      <div className="mt-3 flex items-start gap-3 rounded-xl border border-primary/25 border-l-4 border-l-primary bg-primary/[0.04] px-4 py-3">
+        <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide bg-primary text-white px-1.5 py-0.5 rounded">
+          Ota-ona
+        </span>
+        <p className="text-[14px] text-ink">
+          Siz <span className="font-semibold">{data.child.fullName}</span> nomidan
+          ariza topshirayapsiz. Bu yerda kiritilgan ma&apos;lumotlar farzandingiz
+          profiliga saqlanadi.
+        </p>
+      </div>
+
+      <h1 className="text-[26px] font-bold text-ink mt-4">
         {data.child.fullName}
       </h1>
       <div

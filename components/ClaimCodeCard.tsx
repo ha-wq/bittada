@@ -9,7 +9,7 @@ type ParentRequest = {
   parent: { id: string; fullName: string; email: string | null };
 };
 
-export function ClaimCodeCard() {
+export function ClaimCodeCard({ bare }: { bare?: boolean }) {
   const [code, setCode] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [requests, setRequests] = useState<ParentRequest[]>([]);
@@ -53,7 +53,7 @@ export function ClaimCodeCard() {
   const approved = requests.filter((r) => r.status === "APPROVED");
 
   return (
-    <div className="border border-hairline rounded-md p-5">
+    <div className={bare ? "" : "border border-hairline rounded-xl p-5 bg-surface-soft/40"}>
       <h2 className="text-[16px] font-semibold text-ink">Ota-ona ulanishi</h2>
       <p className="text-[13px] text-muted mt-1">
         Ota-onangiz siz uchun ariza topshira olishi uchun ushbu kodni unga

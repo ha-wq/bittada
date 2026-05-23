@@ -52,6 +52,7 @@ export function Navbar() {
           : STUDENT_LINKS;
 
   const isAdmin = user?.role === "UNIVERSITY_ADMIN" || user?.role === "SUPER_ADMIN";
+  const isParent = user?.role === "PARENT";
 
   return (
     <header
@@ -80,6 +81,11 @@ export function Navbar() {
           {isAdmin && (
             <span className="ml-2 text-[11px] font-bold uppercase tracking-wide bg-ink text-white px-2 py-0.5 rounded">
               Admin
+            </span>
+          )}
+          {isParent && (
+            <span className="ml-2 text-[11px] font-bold uppercase tracking-wide bg-primary text-white px-2 py-0.5 rounded">
+              Ota-ona
             </span>
           )}
         </Link>
@@ -128,7 +134,14 @@ export function Navbar() {
                   />
                   <div className="absolute right-0 mt-2 w-64 bg-canvas border border-hairline rounded-md shadow-card overflow-hidden z-20 py-2">
                     <div className="px-4 py-3 border-b border-hairline-soft">
-                      <div className="font-semibold text-ink">{user.fullName}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-ink">{user.fullName}</span>
+                        {isParent && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                            Ota-ona
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-muted truncate">{user.email}</div>
                     </div>
                     <div className="md:hidden border-b border-hairline-soft py-2">

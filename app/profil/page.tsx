@@ -383,6 +383,17 @@ function ProfilePageInner() {
           complete={isProfileComplete(user.profile)}
           onChanged={refresh}
         />
+      </div>
+
+      {/* Ota-ona — visually distinct section at the end */}
+      <div className="mt-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-px flex-1 bg-hairline" />
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+            Ota-ona kirishiga ruxsat
+          </span>
+          <div className="h-px flex-1 bg-hairline" />
+        </div>
         <ClaimCodeCard />
       </div>
     </div>
