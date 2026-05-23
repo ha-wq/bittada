@@ -56,12 +56,14 @@ export type IeltsScore = {
   reading: string;
   writing: string;
   speaking: string;
+  certificate?: string;
 };
 
 export type SatScore = {
   total: string;
   math: string;
   readingWriting: string;
+  certificate?: string;
 };
 
 export type DtmSubject = {
@@ -73,6 +75,7 @@ export type DtmScore = {
   total: string;
   majburiy: DtmSubject[];
   asosiy: DtmSubject[];
+  certificate?: string;
 };
 
 export type Profile = {
@@ -89,7 +92,6 @@ export type Profile = {
   dtm?: DtmScore;
   applyingForGrant: boolean;
   diplomaUploaded: boolean;
-  dtmUploaded: boolean;
 };
 
 export type User = {

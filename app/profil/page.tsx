@@ -45,7 +45,6 @@ const EMPTY: Profile = {
   graduationYear: "",
   applyingForGrant: false,
   diplomaUploaded: false,
-  dtmUploaded: false,
 };
 
 export default function ProfilePage() {
@@ -215,8 +214,6 @@ export default function ProfilePage() {
                 <DtmFields
                   value={form.dtm}
                   onChange={(v) => set("dtm", v)}
-                  fileUploaded={form.dtmUploaded}
-                  onFileChange={(b) => set("dtmUploaded", b)}
                 />
               )}
             </TestBlock>
@@ -353,36 +350,43 @@ function IeltsFields({
   const set = <K extends keyof IeltsScore>(k: K, v: IeltsScore[K]) =>
     onChange({ ...value, [k]: v });
   return (
-    <div className="grid sm:grid-cols-3 gap-3">
-      <Input
-        label="Overall"
-        value={value.overall}
-        onChange={(e) => set("overall", e.target.value)}
-        placeholder="6.5"
-      />
-      <Input
-        label="Listening"
-        value={value.listening}
-        onChange={(e) => set("listening", e.target.value)}
-        placeholder="6.5"
-      />
-      <Input
-        label="Reading"
-        value={value.reading}
-        onChange={(e) => set("reading", e.target.value)}
-        placeholder="6.5"
-      />
-      <Input
-        label="Writing"
-        value={value.writing}
-        onChange={(e) => set("writing", e.target.value)}
-        placeholder="6.0"
-      />
-      <Input
-        label="Speaking"
-        value={value.speaking}
-        onChange={(e) => set("speaking", e.target.value)}
-        placeholder="7.0"
+    <div className="space-y-4">
+      <div className="grid sm:grid-cols-3 gap-3">
+        <Input
+          label="Overall"
+          value={value.overall}
+          onChange={(e) => set("overall", e.target.value)}
+          placeholder="6.5"
+        />
+        <Input
+          label="Listening"
+          value={value.listening}
+          onChange={(e) => set("listening", e.target.value)}
+          placeholder="6.5"
+        />
+        <Input
+          label="Reading"
+          value={value.reading}
+          onChange={(e) => set("reading", e.target.value)}
+          placeholder="6.5"
+        />
+        <Input
+          label="Writing"
+          value={value.writing}
+          onChange={(e) => set("writing", e.target.value)}
+          placeholder="6.0"
+        />
+        <Input
+          label="Speaking"
+          value={value.speaking}
+          onChange={(e) => set("speaking", e.target.value)}
+          placeholder="7.0"
+        />
+      </div>
+      <FileUploadField
+        label="IELTS sertifikati (PDF, JPG)"
+        value={value.certificate}
+        onChange={(v) => set("certificate", v)}
       />
     </div>
   );
@@ -398,24 +402,31 @@ function SatFields({
   const set = <K extends keyof SatScore>(k: K, v: SatScore[K]) =>
     onChange({ ...value, [k]: v });
   return (
-    <div className="grid sm:grid-cols-3 gap-3">
-      <Input
-        label="Umumiy ball"
-        value={value.total}
-        onChange={(e) => set("total", e.target.value)}
-        placeholder="1340"
-      />
-      <Input
-        label="Math"
-        value={value.math}
-        onChange={(e) => set("math", e.target.value)}
-        placeholder="680"
-      />
-      <Input
-        label="Reading & Writing"
-        value={value.readingWriting}
-        onChange={(e) => set("readingWriting", e.target.value)}
-        placeholder="660"
+    <div className="space-y-4">
+      <div className="grid sm:grid-cols-3 gap-3">
+        <Input
+          label="Umumiy ball"
+          value={value.total}
+          onChange={(e) => set("total", e.target.value)}
+          placeholder="1340"
+        />
+        <Input
+          label="Math"
+          value={value.math}
+          onChange={(e) => set("math", e.target.value)}
+          placeholder="680"
+        />
+        <Input
+          label="Reading & Writing"
+          value={value.readingWriting}
+          onChange={(e) => set("readingWriting", e.target.value)}
+          placeholder="660"
+        />
+      </div>
+      <FileUploadField
+        label="SAT score report (PDF, JPG)"
+        value={value.certificate}
+        onChange={(v) => set("certificate", v)}
       />
     </div>
   );
@@ -424,13 +435,9 @@ function SatFields({
 function DtmFields({
   value,
   onChange,
-  fileUploaded,
-  onFileChange,
 }: {
   value: DtmScore;
   onChange: (v: DtmScore) => void;
-  fileUploaded: boolean;
-  onFileChange: (b: boolean) => void;
 }) {
   const setMaj = (i: number, patch: Partial<{ name: string; score: string }>) => {
     const next = value.majburiy.map((s, idx) =>
@@ -499,9 +506,9 @@ function DtmFields({
       </div>
 
       <FileUploadField
-        label="DTM sertifikati (ixtiyoriy)"
-        value={fileUploaded ? "dtm.pdf" : undefined}
-        onChange={(v) => onFileChange(!!v)}
+        label="DTM sertifikati (PDF, JPG)"
+        value={value.certificate}
+        onChange={(v) => onChange({ ...value, certificate: v })}
       />
     </div>
   );
