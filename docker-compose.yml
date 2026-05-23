@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: bittada
       POSTGRES_DB: bittada
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - bittada_pgdata:/var/lib/postgresql/data
 
