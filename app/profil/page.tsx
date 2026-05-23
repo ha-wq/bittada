@@ -3,8 +3,37 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isProfileComplete, useAuth } from "@/lib/auth-context";
-import { Profile } from "@/lib/types";
+import { DtmScore, IeltsScore, Profile, SatScore } from "@/lib/types";
 import { Button, Input, Select } from "@/components/ui";
+
+const EMPTY_IELTS: IeltsScore = {
+  overall: "",
+  listening: "",
+  reading: "",
+  writing: "",
+  speaking: "",
+};
+
+const EMPTY_SAT: SatScore = {
+  total: "",
+  math: "",
+  readingWriting: "",
+};
+
+const DTM_MAJBURIY_DEFAULTS = [
+  "Ona tili va adabiyot",
+  "Matematika",
+  "O'zbekiston tarixi",
+];
+
+const EMPTY_DTM: DtmScore = {
+  total: "",
+  majburiy: DTM_MAJBURIY_DEFAULTS.map((name) => ({ name, score: "" })),
+  asosiy: [
+    { name: "", score: "" },
+    { name: "", score: "" },
+  ],
+};
 
 const EMPTY: Profile = {
   school: "",
@@ -14,9 +43,6 @@ const EMPTY: Profile = {
   address: "",
   passportId: "",
   graduationYear: "",
-  ielts: "",
-  sat: "",
-  dtm: "",
   applyingForGrant: false,
   diplomaUploaded: false,
   dtmUploaded: false,
@@ -173,37 +199,57 @@ export default function ProfilePage() {
 
         <Section title="Test natijalari">
           <p className="text-[14px] text-muted -mt-2 mb-4">
-            Mavjud bo'lganlarini kiriting. Talab qilingan paytda yuklash mumkin.
+            Hammasi ixtiyoriy. Sizda bor testlarni qo'shing — har biri
+            qism-ballarini saqlaydi.
           </p>
-          <div className="grid sm:grid-cols-3 gap-4">
-            <Input
-              label="DTM ball"
-              name="dtm"
-              value={form.dtm}
-              onChange={(e) => set("dtm", e.target.value)}
-              placeholder="189"
-            />
-            <Input
+
+          <div className="space-y-3">
+            <TestBlock
+              label="DTM"
+              hint="O'zbekiston Davlat Test Markazi"
+              active={!!form.dtm}
+              onAdd={() => set("dtm", EMPTY_DTM)}
+              onRemove={() => set("dtm", undefined)}
+            >
+              {form.dtm && (
+                <DtmFields
+                  value={form.dtm}
+                  onChange={(v) => set("dtm", v)}
+                  fileUploaded={form.dtmUploaded}
+                  onFileChange={(b) => set("dtmUploaded", b)}
+                />
+              )}
+            </TestBlock>
+
+            <TestBlock
               label="IELTS"
-              name="ielts"
-              value={form.ielts}
-              onChange={(e) => set("ielts", e.target.value)}
-              placeholder="6.5"
-            />
-            <Input
+              hint="Ingliz tili — Listening, Reading, Writing, Speaking"
+              active={!!form.ielts}
+              onAdd={() => set("ielts", EMPTY_IELTS)}
+              onRemove={() => set("ielts", undefined)}
+            >
+              {form.ielts && (
+                <IeltsFields
+                  value={form.ielts}
+                  onChange={(v) => set("ielts", v)}
+                />
+              )}
+            </TestBlock>
+
+            <TestBlock
               label="SAT"
-              name="sat"
-              value={form.sat}
-              onChange={(e) => set("sat", e.target.value)}
-              placeholder="1340"
-            />
-          </div>
-          <div className="mt-4">
-            <FileUploadField
-              label="DTM sertifikati (ixtiyoriy)"
-              value={form.dtmUploaded ? "dtm.pdf" : undefined}
-              onChange={(v) => set("dtmUploaded", !!v)}
-            />
+              hint="Scholastic Assessment Test — Math + Reading/Writing"
+              active={!!form.sat}
+              onAdd={() => set("sat", EMPTY_SAT)}
+              onRemove={() => set("sat", undefined)}
+            >
+              {form.sat && (
+                <SatFields
+                  value={form.sat}
+                  onChange={(v) => set("sat", v)}
+                />
+              )}
+            </TestBlock>
           </div>
         </Section>
 
@@ -244,6 +290,219 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div>
       <h2 className="text-[20px] font-semibold text-ink mb-4">{title}</h2>
       {children}
+    </div>
+  );
+}
+
+function TestBlock({
+  label,
+  hint,
+  active,
+  onAdd,
+  onRemove,
+  children,
+}: {
+  label: string;
+  hint: string;
+  active: boolean;
+  onAdd: () => void;
+  onRemove: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="border border-hairline rounded-md">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <div className="text-[15px] font-semibold text-ink">{label}</div>
+          <div className="text-[13px] text-muted mt-0.5">{hint}</div>
+        </div>
+        {active ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-[13px] text-error font-medium hover:underline"
+          >
+            O'chirish
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="text-[14px] font-medium text-ink border border-hairline hover:border-ink rounded-full px-4 h-9"
+          >
+            + Qo'shish
+          </button>
+        )}
+      </div>
+      {active && (
+        <div className="border-t border-hairline-soft p-4 bg-surface-soft/40">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IeltsFields({
+  value,
+  onChange,
+}: {
+  value: IeltsScore;
+  onChange: (v: IeltsScore) => void;
+}) {
+  const set = <K extends keyof IeltsScore>(k: K, v: IeltsScore[K]) =>
+    onChange({ ...value, [k]: v });
+  return (
+    <div className="grid sm:grid-cols-3 gap-3">
+      <Input
+        label="Overall"
+        value={value.overall}
+        onChange={(e) => set("overall", e.target.value)}
+        placeholder="6.5"
+      />
+      <Input
+        label="Listening"
+        value={value.listening}
+        onChange={(e) => set("listening", e.target.value)}
+        placeholder="6.5"
+      />
+      <Input
+        label="Reading"
+        value={value.reading}
+        onChange={(e) => set("reading", e.target.value)}
+        placeholder="6.5"
+      />
+      <Input
+        label="Writing"
+        value={value.writing}
+        onChange={(e) => set("writing", e.target.value)}
+        placeholder="6.0"
+      />
+      <Input
+        label="Speaking"
+        value={value.speaking}
+        onChange={(e) => set("speaking", e.target.value)}
+        placeholder="7.0"
+      />
+    </div>
+  );
+}
+
+function SatFields({
+  value,
+  onChange,
+}: {
+  value: SatScore;
+  onChange: (v: SatScore) => void;
+}) {
+  const set = <K extends keyof SatScore>(k: K, v: SatScore[K]) =>
+    onChange({ ...value, [k]: v });
+  return (
+    <div className="grid sm:grid-cols-3 gap-3">
+      <Input
+        label="Umumiy ball"
+        value={value.total}
+        onChange={(e) => set("total", e.target.value)}
+        placeholder="1340"
+      />
+      <Input
+        label="Math"
+        value={value.math}
+        onChange={(e) => set("math", e.target.value)}
+        placeholder="680"
+      />
+      <Input
+        label="Reading & Writing"
+        value={value.readingWriting}
+        onChange={(e) => set("readingWriting", e.target.value)}
+        placeholder="660"
+      />
+    </div>
+  );
+}
+
+function DtmFields({
+  value,
+  onChange,
+  fileUploaded,
+  onFileChange,
+}: {
+  value: DtmScore;
+  onChange: (v: DtmScore) => void;
+  fileUploaded: boolean;
+  onFileChange: (b: boolean) => void;
+}) {
+  const setMaj = (i: number, patch: Partial<{ name: string; score: string }>) => {
+    const next = value.majburiy.map((s, idx) =>
+      idx === i ? { ...s, ...patch } : s,
+    );
+    onChange({ ...value, majburiy: next });
+  };
+  const setAso = (i: number, patch: Partial<{ name: string; score: string }>) => {
+    const next = value.asosiy.map((s, idx) =>
+      idx === i ? { ...s, ...patch } : s,
+    );
+    onChange({ ...value, asosiy: next });
+  };
+
+  return (
+    <div className="space-y-5">
+      <Input
+        label="Umumiy ball"
+        value={value.total}
+        onChange={(e) => onChange({ ...value, total: e.target.value })}
+        placeholder="189.7"
+      />
+
+      <div>
+        <div className="text-[13px] font-semibold uppercase tracking-wide text-muted mb-2">
+          Majburiy fanlar
+        </div>
+        <div className="space-y-2">
+          {value.majburiy.map((s, i) => (
+            <div key={i} className="grid grid-cols-[1fr_120px] gap-2">
+              <Input
+                value={s.name}
+                onChange={(e) => setMaj(i, { name: e.target.value })}
+                placeholder="Fan nomi"
+              />
+              <Input
+                value={s.score}
+                onChange={(e) => setMaj(i, { score: e.target.value })}
+                placeholder="Ball"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-[13px] font-semibold uppercase tracking-wide text-muted mb-2">
+          Asosiy fanlar
+        </div>
+        <div className="space-y-2">
+          {value.asosiy.map((s, i) => (
+            <div key={i} className="grid grid-cols-[1fr_120px] gap-2">
+              <Input
+                value={s.name}
+                onChange={(e) => setAso(i, { name: e.target.value })}
+                placeholder="Fan nomi"
+              />
+              <Input
+                value={s.score}
+                onChange={(e) => setAso(i, { score: e.target.value })}
+                placeholder="Ball"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <FileUploadField
+        label="DTM sertifikati (ixtiyoriy)"
+        value={fileUploaded ? "dtm.pdf" : undefined}
+        onChange={(v) => onFileChange(!!v)}
+      />
     </div>
   );
 }

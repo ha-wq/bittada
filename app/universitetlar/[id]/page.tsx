@@ -211,12 +211,14 @@ export default function UniversityDetailPage({
           onClose={() => setShowApplyModal(false)}
           onSubmit={(data) => {
             const requirements = uni.requirements;
-            const dtm = Number(user?.profile?.dtm || 0);
-            const ielts = Number(user?.profile?.ielts || 0);
+            const dtm = Number(user?.profile?.dtm?.total || 0);
+            const ielts = Number(user?.profile?.ielts?.overall || 0);
+            const sat = Number(user?.profile?.sat?.total || 0);
             const meetsDtm = !requirements.minDtm || dtm >= requirements.minDtm;
             const meetsIelts =
               !requirements.minIelts || ielts >= requirements.minIelts;
-            const meets = meetsDtm && meetsIelts;
+            const meetsSat = !requirements.minSat || sat >= requirements.minSat;
+            const meets = meetsDtm && meetsIelts && meetsSat;
             const app: Application = {
               id: crypto.randomUUID(),
               universityId: uni.id,

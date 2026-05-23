@@ -50,6 +50,31 @@ export type Application = {
   createdAt: string;
 };
 
+export type IeltsScore = {
+  overall: string;
+  listening: string;
+  reading: string;
+  writing: string;
+  speaking: string;
+};
+
+export type SatScore = {
+  total: string;
+  math: string;
+  readingWriting: string;
+};
+
+export type DtmSubject = {
+  name: string;
+  score: string;
+};
+
+export type DtmScore = {
+  total: string;
+  majburiy: DtmSubject[];
+  asosiy: DtmSubject[];
+};
+
 export type Profile = {
   school: string;
   photo?: string;
@@ -59,9 +84,9 @@ export type Profile = {
   address: string;
   passportId: string;
   graduationYear: string;
-  ielts?: string;
-  sat?: string;
-  dtm?: string;
+  ielts?: IeltsScore;
+  sat?: SatScore;
+  dtm?: DtmScore;
   applyingForGrant: boolean;
   diplomaUploaded: boolean;
   dtmUploaded: boolean;
