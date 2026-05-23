@@ -114,6 +114,7 @@ model Major {
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
   name         String
   partsOfDay   String[]
+  tuitionFee   Int
   applications Application[]
 }
 

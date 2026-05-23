@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
 import {
   DtmScore,
@@ -74,6 +74,8 @@ const EMPTY: Profile = {
 export default function ProfilePage() {
   const { user, loading, refresh } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromApply = searchParams.get("from") === "apply";
   const [form, setForm] = useState<Profile>(EMPTY);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -106,6 +108,13 @@ export default function ProfilePage() {
 
   const complete = isProfileComplete(form);
 
+  const REQUIRED_FIELDS: (keyof Profile)[] = [
+    "phone", "country", "citizenship", "address", "passportId",
+    "graduationYear", "diploma", "idCardFront", "idCardBack", "school",
+  ];
+  const filled = REQUIRED_FIELDS.filter((k) => Boolean(form[k])).length;
+  const pct = Math.round((filled / REQUIRED_FIELDS.length) * 100);
+
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-8 py-10">
       <h1 className="text-[28px] font-bold text-ink">Profil</h1>
@@ -113,19 +122,36 @@ export default function ProfilePage() {
         Bu ma'lumotlar barcha universitetlarga ariza topshirishda ishlatiladi.
       </p>
 
-      <div
-        className={`mt-6 mb-8 rounded-md px-4 py-3 text-[14px] font-medium ${
-          complete
-            ? "bg-[#e6f7e6] text-success"
-            : "bg-surface-soft text-muted"
-        }`}
-      >
-        {complete
-          ? "✓ Profil to'liq. Endi universitetlarga ariza topshirishingiz mumkin."
-          : "Majburiy maydonlarni to'ldirib bo'lgach, ariza topshira olasiz."}
+      {fromApply && !complete && (
+        <div className="mt-4 flex items-start gap-3 bg-primary/[0.06] border border-primary/20 rounded-lg px-4 py-3">
+          <span className="text-primary mt-0.5">⚠</span>
+          <p className="text-[14px] text-primary font-medium">
+            Ariza topshirish uchun barcha majburiy maydonlarni to'ldiring.
+          </p>
+        </div>
+      )}
+
+      <div className="mt-6 mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[14px] text-muted">
+            {complete ? "Profil to'liq" : `${filled} / ${REQUIRED_FIELDS.length} maydon to'ldirilgan`}
+          </span>
+          <span className={`text-[14px] font-semibold ${complete ? "text-success" : "text-ink"}`}>
+            {pct}%
+          </span>
+        </div>
+        <div className="h-1.5 bg-surface-strong rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${complete ? "bg-success" : "bg-primary"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {complete && (
+          <p className="text-[13px] text-success mt-2">✓ Universitetlarga ariza topshirishingiz mumkin.</p>
+        )}
       </div>
 
-      <form onSubmit={submit} className="space-y-8">
+      <form onSubmit={submit} className="space-y-4">
         <Section title="Shaxsiy ma'lumotlar">
           <div className="space-y-4">
             <div className="grid sm:grid-cols-[1fr_auto] gap-5 items-start">
@@ -346,8 +372,8 @@ export default function ProfilePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h2 className="text-[20px] font-semibold text-ink mb-4">{title}</h2>
+    <div className="bg-canvas border border-hairline rounded-xl p-6">
+      <h2 className="text-[20px] font-semibold text-ink mb-5">{title}</h2>
       {children}
     </div>
   );

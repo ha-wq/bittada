@@ -24,12 +24,12 @@ export default function UniversityDetailPage({
   const [uni, setUni] = useState<University | null>(null);
   const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [showProfileBanner, setShowProfileBanner] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMajorId, setSelectedMajorId] = useState<string>("");
 
   useEffect(() => {
     apiJson<University>(`/api/universities/${slug}`)
-      .then(setUni)
+      .then((u) => { setUni(u); setSelectedMajorId(u.majors[0]?.id ?? ""); })
       .catch(() => setUni(null))
       .finally(() => setLoading(false));
   }, [slug]);
@@ -42,6 +42,7 @@ export default function UniversityDetailPage({
   }
 
   const alreadyApplied = user?.applications.some((a) => a.universityId === uni.id);
+  const selectedMajor = uni.majors.find((m) => m.id === selectedMajorId) ?? null;
 
   const onApply = () => {
     setError(null);
@@ -50,7 +51,7 @@ export default function UniversityDetailPage({
       return;
     }
     if (!isProfileComplete(user.profile)) {
-      setShowProfileBanner(true);
+      router.push("/profil?from=apply");
       return;
     }
     if (alreadyApplied) {
@@ -105,37 +106,52 @@ export default function UniversityDetailPage({
 
           <div className="flex flex-wrap gap-2 mt-4">
             {uni.language.map((l) => (
-              <Badge key={l} variant="neutral">
-                {l} tilida
-              </Badge>
+              <Badge key={l} variant="neutral">{l} tilida</Badge>
             ))}
             {uni.offersFinancialAid && <Badge variant="success">Grant mavjud</Badge>}
             {uni.hasEntranceExam && <Badge variant="info">Ichki imtihon mavjud</Badge>}
           </div>
 
+          {/* Quick stat strip */}
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            <StatPill label="Muddat" value={formatDate(uni.deadline)} />
+            <StatPill label="Shahar" value={uni.city} />
+            <StatPill label="Yo'nalishlar" value={`${uni.majors.length} ta`} />
+          </div>
+
           <p className="text-[16px] text-body mt-6 leading-relaxed">{uni.description}</p>
 
-          <Section title="O'qish narxi">
-            <p className="text-[16px] text-ink">
-              <span className="font-semibold">{formatSom(uni.tuitionMin)}</span>
-              {" – "}
-              <span className="font-semibold">{formatSom(uni.tuitionMax)}</span>
-              <span className="text-muted"> / yil</span>
-            </p>
-          </Section>
-
-          <Section title="Topshirish muddati">
-            <p className="text-[16px] text-ink">{formatDate(uni.deadline)}</p>
-          </Section>
-
           <Section title="Talablar">
-            <ul className="space-y-2 text-[15px] text-body">
-              {uni.minDtm && <li>• DTM ball: kamida {uni.minDtm}</li>}
-              {uni.minIelts && <li>• IELTS: kamida {uni.minIelts}</li>}
-              {uni.minSat && <li>• SAT: kamida {uni.minSat}</li>}
-              {uni.minGpa && <li>• GPA: kamida {uni.minGpa}</li>}
+            <ul className="space-y-2">
+              {uni.minDtm && (
+                <li className="flex items-center gap-2 text-[15px] text-body">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  DTM ball: kamida <span className="font-semibold text-ink">{uni.minDtm}</span>
+                </li>
+              )}
+              {uni.minIelts && (
+                <li className="flex items-center gap-2 text-[15px] text-body">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  IELTS: kamida <span className="font-semibold text-ink">{uni.minIelts}</span>
+                </li>
+              )}
+              {uni.minSat && (
+                <li className="flex items-center gap-2 text-[15px] text-body">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  SAT: kamida <span className="font-semibold text-ink">{uni.minSat}</span>
+                </li>
+              )}
+              {uni.minGpa && (
+                <li className="flex items-center gap-2 text-[15px] text-body">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  GPA: kamida <span className="font-semibold text-ink">{uni.minGpa}</span>
+                </li>
+              )}
               {uni.requirementsNote && (
-                <li className="text-muted">• {uni.requirementsNote}</li>
+                <li className="flex items-center gap-2 text-[15px] text-muted">
+                  <span className="w-1.5 h-1.5 rounded-full bg-surface-strong flex-shrink-0" />
+                  {uni.requirementsNote}
+                </li>
               )}
             </ul>
           </Section>
@@ -143,12 +159,24 @@ export default function UniversityDetailPage({
           <Section title={`Mutaxassisliklar (${uni.majors.length})`}>
             <div className="grid sm:grid-cols-2 gap-3">
               {uni.majors.map((m) => (
-                <div key={m.id} className="border border-hairline rounded-md p-4">
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setSelectedMajorId(m.id)}
+                  className={`text-left border rounded-md p-4 transition-colors ${
+                    selectedMajorId === m.id
+                      ? "border-primary bg-primary/[0.04]"
+                      : "border-hairline hover:border-ink/30"
+                  }`}
+                >
                   <div className="font-medium text-ink">{m.name}</div>
                   <div className="text-[13px] text-muted mt-1">
                     {m.partsOfDay.map((p) => PART_OF_DAY_LABEL[p]).join(" · ")}
                   </div>
-                </div>
+                  <div className="text-[13px] font-medium text-primary mt-2">
+                    {formatSom(m.tuitionFee)} / yil
+                  </div>
+                </button>
               ))}
             </div>
           </Section>
@@ -156,22 +184,49 @@ export default function UniversityDetailPage({
 
         <aside className="lg:sticky lg:top-28 lg:self-start">
           <div className="bg-canvas border border-hairline rounded-md p-6 shadow-card">
-            <div className="text-[15px] text-muted">Yillik narx</div>
-            <div className="text-[24px] font-bold text-ink mt-1">
-              {formatSom(uni.tuitionMin)}
+            {/* Tuition — updates when major is selected */}
+            <div className="text-[13px] text-muted">
+              {selectedMajor ? selectedMajor.name : "Yo'nalish tanlang"}
             </div>
-            <div className="text-[13px] text-muted">dan boshlab</div>
+            <div className="text-[28px] font-bold text-ink mt-1 leading-none">
+              {formatSom(selectedMajor?.tuitionFee ?? uni.tuitionMin)}
+            </div>
+            <div className="text-[13px] text-muted mt-1">/ yil</div>
 
             <div className="border-t border-hairline my-5" />
 
-            <div className="text-[14px] text-body space-y-1">
+            {/* Major picker */}
+            <div className="mb-4">
+              <div className="text-[13px] font-medium text-ink mb-2">Yo'nalish</div>
+              <div className="space-y-1.5">
+                {uni.majors.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setSelectedMajorId(m.id)}
+                    className={`w-full text-left px-3 py-2 rounded-md text-[13px] transition-colors flex items-center gap-2.5 ${
+                      selectedMajorId === m.id
+                        ? "bg-primary text-white font-medium"
+                        : "text-body hover:bg-surface-soft"
+                    }`}
+                  >
+                    <span className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                      selectedMajorId === m.id ? "border-white" : "border-ink/30"
+                    }`}>
+                      {selectedMajorId === m.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </span>
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-hairline my-4" />
+
+            <div className="text-[13px] text-body space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted">Muddat</span>
                 <span className="text-ink font-medium">{formatDate(uni.deadline)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Mutaxassisliklar</span>
-                <span className="text-ink font-medium">{uni.majors.length}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Shahar</span>
@@ -195,25 +250,10 @@ export default function UniversityDetailPage({
         </aside>
       </div>
 
-      {showProfileBanner && (
-        <Modal onClose={() => setShowProfileBanner(false)}>
-          <h2 className="text-[20px] font-bold text-ink">Profilingizni to'ldiring</h2>
-          <p className="text-[15px] text-body mt-2">
-            Ariza topshirish uchun avval profilingizni to'liq to'ldirishingiz kerak. Bu
-            hujjatlar barcha universitetlar uchun bir marta to'ldiriladi.
-          </p>
-          <div className="flex gap-3 mt-6">
-            <Button variant="secondary" onClick={() => setShowProfileBanner(false)}>
-              Bekor qilish
-            </Button>
-            <Button onClick={() => router.push("/profil")}>Profilga o'tish</Button>
-          </div>
-        </Modal>
-      )}
-
       {showApplyModal && (
         <ApplyModal
           uni={uni}
+          initialMajorId={selectedMajorId}
           onClose={() => setShowApplyModal(false)}
           onSubmit={submitApply}
         />
@@ -231,6 +271,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function StatPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-surface-soft rounded-lg px-4 py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</div>
+      <div className="text-[15px] font-semibold text-ink mt-0.5">{value}</div>
+    </div>
+  );
+}
+
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
@@ -244,10 +293,12 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 
 function ApplyModal({
   uni,
+  initialMajorId,
   onClose,
   onSubmit,
 }: {
   uni: University;
+  initialMajorId?: string;
   onClose: () => void;
   onSubmit: (data: {
     majorId: string;
@@ -255,7 +306,7 @@ function ApplyModal({
     financialAid: boolean;
   }) => void;
 }) {
-  const [majorId, setMajorId] = useState(uni.majors[0]?.id || "");
+  const [majorId, setMajorId] = useState(initialMajorId || uni.majors[0]?.id || "");
   const selectedMajor = uni.majors.find((m) => m.id === majorId);
   const [partOfDay, setPartOfDay] = useState<PartOfDay>(
     (selectedMajor?.partsOfDay[0] as PartOfDay) || "kunduzgi",

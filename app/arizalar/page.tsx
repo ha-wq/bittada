@@ -78,7 +78,7 @@ export default function ApplicationsPage() {
         <h1 className="text-[28px] font-bold text-ink">Mening arizalarim</h1>
         <Link
           href="/dashboard"
-          className="text-[14px] text-muted hover:text-ink underline"
+          className="text-[14px] font-medium rounded-md px-3 py-1.5 bg-primary text-white hover:bg-primary-active transition-colors"
         >
           + Universitet qo'shish
         </Link>
@@ -136,7 +136,7 @@ export default function ApplicationsPage() {
           </p>
           <div className="space-y-3">
             {examNeeded.map((a) => (
-              <AppRow key={a.id} app={a} onRemove={() => removeApp(a.id)} />
+              <AppRow key={a.id} app={a} blocked onRemove={() => removeApp(a.id)} />
             ))}
           </div>
         </Block>
@@ -168,18 +168,20 @@ function AppRow({
   app,
   selectable,
   selected,
+  blocked,
   onToggle,
   onRemove,
 }: {
   app: Application;
   selectable?: boolean;
   selected?: boolean;
+  blocked?: boolean;
   onToggle?: () => void;
   onRemove?: () => void;
 }) {
   const uni = app.university;
   return (
-    <div className="border border-hairline rounded-md p-5 flex items-start gap-4">
+    <div className={`border rounded-md p-5 flex items-start gap-4 ${blocked ? "border-primary/40 border-l-4 bg-primary/[0.03]" : "border-hairline"}`}>
       {selectable && (
         <input
           type="checkbox"
@@ -215,7 +217,7 @@ function AppRow({
               </div>
             )}
           </div>
-          <Badge variant={STATUS_VARIANT[app.status]}>
+          <Badge variant={blocked && app.status === "YUBORILMAGAN" ? "error" : STATUS_VARIANT[app.status]}>
             {APPLICATION_STATUS_LABEL[app.status]}
           </Badge>
         </div>

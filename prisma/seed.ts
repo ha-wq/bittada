@@ -175,7 +175,7 @@ async function main() {
     await prisma.university.create({
       data: {
         ...rest,
-        majors: { create: majors },
+        majors: { create: majors.map((m) => ({ ...m, tuitionFee: u.tuitionMin })) },
       },
     });
     console.log(`Seeded ${u.slug}`);

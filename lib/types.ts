@@ -12,6 +12,7 @@ export type Major = {
   id: string;
   name: string;
   partsOfDay: PartOfDay[];
+  tuitionFee: number;
 };
 
 export type University = {
