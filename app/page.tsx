@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useAuth, apiJson } from "@/lib/auth-context";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { University } from "@/lib/types";
 import { UniLogo } from "@/components/UniLogo";
+import { Wordmark } from "@/components/Wordmark";
+
+// Earliest upcoming deadline used by the hero "live" pill.
+const NEXT_DEADLINE_FALLBACK = new Date("2026-08-15T00:00:00Z");
 
 export default function Landing() {
   const { user, loading } = useAuth();
@@ -24,111 +28,264 @@ export default function Landing() {
     apiJson<University[]>("/api/universities").then(setUnis).catch(() => {});
   }, []);
 
+  // Computed only after mount to avoid SSR/client time mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const daysLeft = useMemo(() => {
+    if (!mounted) return null;
+    const next = unis
+      .map((u) => new Date(u.deadline).getTime())
+      .filter((t) => t > Date.now())
+      .sort((a, b) => a - b)[0];
+    const target = next ?? NEXT_DEADLINE_FALLBACK.getTime();
+    return Math.max(0, Math.ceil((target - Date.now()) / (1000 * 60 * 60 * 24)));
+  }, [unis, mounted]);
+
   return (
     <div>
-      <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-16 pb-20">
-        <div className="max-w-3xl">
-          <h1
-            className="text-4xl sm:text-5xl font-bold text-ink leading-[1.1] tracking-tight animate-fade-in-up"
-            style={{ animationDelay: "40ms" }}
+      {/* ─── HERO ─── */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-20 pb-24">
+        <div
+          className="inline-flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 border border-hairline rounded-full bg-canvas animate-fade-in-up"
+          style={{ animationDelay: "20ms" }}
+        >
+          <span className="live-dot" />
+          <span className="text-[13px] font-medium text-ink">
+            2026/27 o&apos;quv yili — qabul ochiq
+          </span>
+          {daysLeft !== null && (
+            <>
+              <span className="text-[13px] text-muted">·</span>
+              <span className="text-[13px] text-muted">
+                yaqin muddatga {daysLeft} kun
+              </span>
+            </>
+          )}
+        </div>
+
+        <h1
+          className="display-heading mt-7 max-w-[16ch] animate-fade-in-up"
+          style={{
+            fontSize: "clamp(44px, 7vw, 96px)",
+            animationDelay: "80ms",
+          }}
+        >
+          Bir nechta universitetga{" "}
+          <span className="serif-italic text-primary">bittada</span> ariza
+          topshiring.
+        </h1>
+
+        <p
+          className="text-[18px] sm:text-[19px] text-body mt-7 max-w-[52ch] leading-[1.55] animate-fade-in-up"
+          style={{ animationDelay: "160ms" }}
+        >
+          Westminster, Inha, Ajou, MDIS va boshqa xususiy universitetlarga
+          arizalarni bitta profil orqali yuboring. Hujjatlar bir marta — qaror
+          shu yerda.
+        </p>
+
+        <div
+          className="mt-9 flex flex-wrap gap-3 animate-fade-in-up"
+          style={{ animationDelay: "240ms" }}
+        >
+          <Link
+            href="/royxat"
+            className="inline-flex h-13 items-center gap-2 px-7 rounded-md bg-primary text-white text-[15px] font-medium hover:bg-primary-active transition-colors"
+            style={{ height: 52 }}
           >
-            O'zbekistondagi universitetlarga
-            <br />
-            <span className="text-primary">bittada</span> ariza topshiring.
-          </h1>
-          <p
-            className="text-[18px] text-body mt-6 max-w-2xl leading-relaxed animate-fade-in-up"
-            style={{ animationDelay: "140ms" }}
+            Ro&apos;yxatdan o&apos;tish
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M1 7h12m0 0L8 2m5 5l-5 5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
+          <Link
+            href="/kirish"
+            className="inline-flex items-center px-7 rounded-md border border-ink text-ink text-[15px] font-medium hover:bg-ink hover:text-canvas transition-colors"
+            style={{ height: 52 }}
           >
-            Bittada Westminster, Inha, Ajou, MDIS va boshqa o'nlab
-            universitetlarga ariza yuboring va vaqtingizni tejang.
-          </p>
-          <div
-            className="mt-8 flex flex-wrap gap-3 animate-fade-in-up"
-            style={{ animationDelay: "240ms" }}
-          >
-            <Link
-              href="/royxat"
-              className="inline-flex h-12 items-center px-7 rounded-md bg-primary text-white text-[15px] font-medium hover:bg-primary-active transition-colors"
-            >
-              Universitetga topshiring
-            </Link>
-            <Link
-              href="/kirish"
-              className="inline-flex h-12 items-center px-7 rounded-md border border-ink text-ink text-[15px] font-medium hover:bg-surface-soft transition-colors"
-            >
-              Profilingizga kiring
-            </Link>
-          </div>
+            Profilingizga kiring
+          </Link>
+        </div>
+
+        {/* Stat strip */}
+        <div
+          className="mt-16 pt-8 border-t border-hairline max-w-[720px] flex flex-wrap gap-12 animate-fade-in-up"
+          style={{ animationDelay: "320ms" }}
+        >
+          {[
+            { n: `${Math.max(unis.length, 12)}+`, l: "universitet" },
+            { n: "1 ta", l: "profil, barchasi uchun" },
+            { n: "9 daqiqa", l: "o'rtacha to'ldirish" },
+          ].map((s) => (
+            <div key={s.l}>
+              <div className="display-heading text-[30px] mb-1">{s.n}</div>
+              <div className="text-[14px] text-muted">{s.l}</div>
+            </div>
+          ))}
         </div>
       </section>
 
+      {/* ─── UNIVERSITIES ─── */}
       {unis.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-8 pb-24">
-          <h2 className="text-[22px] font-semibold text-ink mb-6 animate-fade-in">
-            Platformada {unis.length}+ universitet
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {unis.map((u, i) => (
-              <div
+        <section className="mx-auto max-w-7xl px-4 sm:px-8 pb-24" id="universitetlar">
+          <div className="flex items-baseline justify-between flex-wrap gap-6 mb-8">
+            <div>
+              <div className="eyebrow mb-2">[01] &nbsp; Platformadagi universitetlar</div>
+              <h2 className="display-heading text-[32px] sm:text-[36px] m-0 max-w-[22ch]">
+                To&apos;rt universitet bilan boshlandi.{" "}
+                <span className="serif-italic text-muted">Davom etmoqda.</span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 border-t border-l border-hairline">
+            {unis.slice(0, 8).map((u, i) => (
+              <Link
+                href={`/universitetlar/${u.slug}`}
                 key={u.id}
-                className="aspect-square rounded-md bg-surface-soft flex items-center justify-center flex-col p-3 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-card animate-fade-in-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}
+                className="border-r border-b border-hairline p-6 sm:p-7 flex flex-col gap-4 min-h-[260px] bg-canvas hover:bg-surface-soft transition-colors"
               >
-                <UniLogo
-                  logo={u.logo}
-                  alt={u.shortName}
-                  className="w-12 h-12 rounded-md object-cover"
-                  textClassName="text-3xl font-bold text-ink/20"
-                />
-                <span className="text-[12px] font-medium text-muted mt-1 line-clamp-2">
-                  {u.shortName}
-                </span>
-              </div>
+                <div className="flex items-center justify-between">
+                  <span className="eyebrow text-muted-soft">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="font-mono text-[10.5px] tracking-[0.08em] text-muted uppercase">
+                    qabul ochiq
+                  </span>
+                </div>
+
+                <div className="aspect-[1.4/1] rounded-sm overflow-hidden bg-surface-soft flex items-center justify-center">
+                  <UniLogo
+                    logo={u.logo}
+                    alt={u.shortName}
+                    className="w-full h-full object-cover"
+                    textClassName="text-4xl font-bold text-ink/25"
+                  />
+                </div>
+
+                <div className="mt-auto">
+                  <div className="display-heading text-[20px] leading-tight mb-1">
+                    {u.shortName}
+                  </div>
+                  <div className="text-[13px] text-muted">{u.city}</div>
+                </div>
+              </Link>
             ))}
           </div>
         </section>
       )}
 
-      <section className="bg-surface-soft py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8">
-          <h2 className="text-[28px] font-bold text-ink">
-            Bittada qanday ishlaydi?
+      {/* ─── HOW IT WORKS ─── */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-8 py-24" id="qanday">
+        <div className="mb-14">
+          <div className="eyebrow mb-2">[02] &nbsp; Qanday ishlaydi</div>
+          <h2 className="display-heading text-[32px] sm:text-[44px] m-0 max-w-[20ch]">
+            Uchta qadam.{" "}
+            <span className="serif-italic text-muted">O&apos;rtacha o&apos;n daqiqa.</span>
           </h2>
-          <div className="grid sm:grid-cols-3 gap-8 mt-10">
-            {[
-              {
-                n: "1",
-                t: "Profil yarating",
-                d: "Hujjatlaringizni, test natijalaringizni va shaxsiy ma'lumotlaringizni kiriting.",
-              },
-              {
-                n: "2",
-                t: "Universitetlarni tanlang",
-                d: "Sizga mos bo'lgan barcha universitetlarni ko'rib chiqing va ro'yxatga qo'shing.",
-              },
-              {
-                n: "3",
-                t: "Bir tugma bilan yuboring",
-                d: "Tanlangan barcha universitetlarga arizalaringiz bittada yuboring.",
-              },
-            ].map((s) => (
-              <div key={s.n}>
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-semibold">
-                  {s.n}
-                </div>
-                <h3 className="text-[18px] font-semibold text-ink mt-4">{s.t}</h3>
-                <p className="text-[15px] text-body mt-2 leading-relaxed">{s.d}</p>
+        </div>
+
+        <div className="grid sm:grid-cols-3 border-t border-hairline">
+          {[
+            {
+              n: "01",
+              t: "Profilingizni to'ldiring",
+              d: "Pasport, diplom, DTM va xalqaro test ballarini bir marta yuklang. Har bir universitet uchun qayta yozish shart emas.",
+              detail: "Hujjat formati avtomatik tekshiriladi",
+            },
+            {
+              n: "02",
+              t: "Universitetlarni tanlang",
+              d: "Yo'nalish, ta'lim tili, joy, narx va imtihon talablari bo'yicha filtrlang. Mos kelganlarini ro'yxatga qo'shing.",
+              detail: "Talablar bo'yicha avtomatik moslik",
+            },
+            {
+              n: "03",
+              t: "Bir tugma bilan yuboring",
+              d: "Tanlangan barcha universitetlarga arizalaringizni bittada yuboring. Har bir holat real vaqtda ko'rinadi.",
+              detail: "Excel eksport va imtihon ro'yxati ham shu yerda",
+            },
+          ].map((s, i, arr) => (
+            <div
+              key={s.n}
+              className={`py-10 px-8 first:pl-0 last:pr-0 flex flex-col gap-4 min-h-[300px] ${
+                i < arr.length - 1 ? "sm:border-r border-hairline" : ""
+              }`}
+            >
+              <div
+                className="serif-italic text-primary leading-none"
+                style={{
+                  fontSize: 80,
+                  fontWeight: 500,
+                  letterSpacing: "-0.04em",
+                }}
+              >
+                {s.n}
               </div>
-            ))}
-          </div>
+              <h3 className="display-heading text-[22px] m-0">{s.t}</h3>
+              <p className="text-[15px] text-body leading-[1.6] m-0">{s.d}</p>
+              <div className="mt-auto pt-4 border-t border-hairline-soft eyebrow">
+                ↳ {s.detail}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
+      {/* ─── FOOTER ─── */}
       <footer className="border-t border-hairline">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8 py-8 text-[14px] text-muted">
-          © 2026 Bittada. O'zbekiston xususiy universitetlari uchun yagona
-          platforma.
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 py-14">
+          <div className="flex items-start justify-between flex-wrap gap-8">
+            <div className="max-w-[32ch]">
+              <Wordmark size={32} />
+              <p className="mt-4 text-[14px] leading-[1.55] text-muted">
+                O&apos;zbekistondagi xususiy universitetlarga ariza topshirishning
+                yagona platformasi.
+              </p>
+            </div>
+            <div className="flex gap-12 flex-wrap">
+              {[
+                {
+                  h: "Talabalar uchun",
+                  l: [
+                    { label: "Ro'yxatdan o'tish", href: "/royxat" },
+                    { label: "Kirish", href: "/kirish" },
+                  ],
+                },
+                {
+                  h: "Universitetlar uchun",
+                  l: [{ label: "Admin paneli", href: "/admin/kirish" }],
+                },
+              ].map((col) => (
+                <div key={col.h}>
+                  <div className="eyebrow mb-4">{col.h}</div>
+                  <ul className="list-none m-0 p-0 flex flex-col gap-2.5">
+                    {col.l.map((item) => (
+                      <li key={item.label}>
+                        <Link
+                          href={item.href}
+                          className="text-[14px] text-ink/80 hover:text-primary"
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-12 pt-6 border-t border-hairline flex justify-between flex-wrap gap-3 font-mono text-[12px] tracking-[0.02em] text-muted uppercase">
+            <span>© 2026 BITTADA — Toshkent</span>
+            <span>Uz · Ru · En</span>
+          </div>
         </div>
       </footer>
     </div>

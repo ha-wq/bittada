@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useState } from "react";
+import { Wordmark } from "@/components/Wordmark";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Universitetlar" },
@@ -48,15 +49,21 @@ export function Navbar() {
   const isAdmin = user?.role === "UNIVERSITY_ADMIN" || user?.role === "SUPER_ADMIN";
 
   return (
-    <header className="sticky top-0 z-30 bg-canvas border-b border-hairline">
-      <div className="mx-auto max-w-7xl px-4 sm:px-8 h-20 flex items-center justify-between gap-6">
+    <header
+      className="sticky top-0 z-30 border-b border-hairline"
+      style={{
+        background:
+          "color-mix(in oklab, var(--color-canvas) 88%, transparent)",
+        backdropFilter: "saturate(140%) blur(14px)",
+        WebkitBackdropFilter: "saturate(140%) blur(14px)",
+      }}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-8 h-[76px] flex items-center justify-between gap-6">
         <Link
           href={user ? (isAdmin ? "/admin/universitet" : "/dashboard") : "/"}
           className="flex items-center gap-2"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="" width={36} height={36} className="h-9 w-9 rounded-md" />
-          <span className="text-xl font-semibold tracking-tight">bittada</span>
+          <Wordmark size={26} />
           {isAdmin && (
             <span className="ml-2 text-[11px] font-bold uppercase tracking-wide bg-ink text-white px-2 py-0.5 rounded">
               Admin

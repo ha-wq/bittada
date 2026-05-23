@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Button, Input } from "@/components/ui";
+import { Wordmark } from "@/components/Wordmark";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -34,9 +35,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-soft px-4">
       <div className="bg-canvas border border-hairline rounded-md max-w-md w-full p-8 shadow-card">
         <div className="flex items-center gap-2 mb-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="" width={36} height={36} className="h-9 w-9 rounded-md" />
-          <span className="text-xl font-semibold">bittada</span>
+          <Wordmark size={26} />
           <span className="text-[11px] font-bold uppercase tracking-wide bg-ink text-white px-2 py-0.5 rounded">
             Admin
           </span>
