@@ -17,6 +17,7 @@ export default function AdminUniversityPage() {
   const [uni, setUni] = useState<FormUni | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,9 +59,14 @@ export default function AdminUniversityPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setWarning(null);
     try {
-      await apiJson("/api/admin/university", { method: "PUT", body: uni });
+      const res = await apiJson<{ _warning?: string }>("/api/admin/university", {
+        method: "PUT",
+        body: uni,
+      });
       setSaved(true);
+      if (res?._warning) setWarning(res._warning);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Saqlashda xatolik.");
@@ -283,6 +289,11 @@ export default function AdminUniversityPage() {
         </div>
 
         {error && <p className="text-[14px] text-error">{error}</p>}
+        {warning && (
+          <div className="bg-[#fff4e6] text-warning border border-[#ffd9a8] rounded-md p-3 text-[13px]">
+            {warning}
+          </div>
+        )}
 
         <div className="flex items-center gap-4 pt-4 border-t border-hairline">
           <Button type="submit" disabled={saving}>

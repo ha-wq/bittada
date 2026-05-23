@@ -46,11 +46,30 @@ export async function PUT(req: NextRequest) {
       data,
     });
 
+    let keptCount = 0;
     if (Array.isArray(majors)) {
-      // Replace majors atomically — delete then create.
-      await prisma.major.deleteMany({ where: { universityId: uni.id } });
-      for (const m of majors) {
-        if (m.name && m.name.trim()) {
+      // Diff-based upsert so majors with existing applications keep their id.
+      const incoming = majors as {
+        id?: string;
+        name: string;
+        partsOfDay?: string[];
+      }[];
+      const existing = await prisma.major.findMany({
+        where: { universityId: uni.id },
+      });
+      const isReal = (id?: string) => !!id && !id.startsWith("tmp-");
+      const incomingRealIds = new Set(
+        incoming.filter((m) => isReal(m.id)).map((m) => m.id as string),
+      );
+
+      for (const m of incoming) {
+        if (!m.name?.trim()) continue;
+        if (isReal(m.id) && existing.some((e) => e.id === m.id)) {
+          await prisma.major.update({
+            where: { id: m.id as string },
+            data: { name: m.name, partsOfDay: m.partsOfDay || [] },
+          });
+        } else {
           await prisma.major.create({
             data: {
               universityId: uni.id,
@@ -60,11 +79,30 @@ export async function PUT(req: NextRequest) {
           });
         }
       }
+
+      for (const e of existing) {
+        if (incomingRealIds.has(e.id)) continue;
+        const appCount = await prisma.application.count({
+          where: { majorId: e.id },
+        });
+        if (appCount === 0) {
+          await prisma.major.delete({ where: { id: e.id } });
+        } else {
+          keptCount += 1;
+        }
+      }
     }
 
-    return prisma.university.findUnique({
+    const updated = await prisma.university.findUnique({
       where: { id: uni.id },
       include: { majors: true },
     });
+    return {
+      ...updated,
+      _warning:
+        keptCount > 0
+          ? `${keptCount} ta mutaxassislik o'chirilmadi — ularga ariza biriktirilgan.`
+          : undefined,
+    };
   });
 }
