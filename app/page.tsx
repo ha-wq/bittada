@@ -27,28 +27,36 @@ export default function Landing() {
     <div>
       <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-16 pb-20">
         <div className="max-w-3xl">
-          <h1 className="text-4xl sm:text-5xl font-bold text-ink leading-[1.1] tracking-tight">
-            O'zbekistondagi xususiy universitetlarga
+          <h1
+            className="text-4xl sm:text-5xl font-bold text-ink leading-[1.1] tracking-tight animate-fade-in-up"
+            style={{ animationDelay: "40ms" }}
+          >
+            O'zbekistondagi universitetlarga
             <br />
-            <span className="text-primary">bitta joydan</span> ariza topshiring.
+            <span className="text-primary">bittada</span> ariza topshiring.
           </h1>
-          <p className="text-[18px] text-body mt-6 max-w-2xl leading-relaxed">
-            Bittada — Westminster, Inha, Ajou, MDIS va boshqa o'nlab
-            universitetlarga bir martalik profil bilan ariza yuborish imkonini
-            beradi. Vaqtni tejang, hujjatlarni bir marta to'ldiring.
+          <p
+            className="text-[18px] text-body mt-6 max-w-2xl leading-relaxed animate-fade-in-up"
+            style={{ animationDelay: "140ms" }}
+          >
+            Bittada Westminster, Inha, Ajou, MDIS va boshqa o'nlab
+            universitetlarga ariza yuboring va vaqtingizni tejang.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div
+            className="mt-8 flex flex-wrap gap-3 animate-fade-in-up"
+            style={{ animationDelay: "240ms" }}
+          >
             <Link
               href="/royxat"
               className="inline-flex h-12 items-center px-7 rounded-md bg-primary text-white text-[15px] font-medium hover:bg-primary-active transition-colors"
             >
-              Bepul boshlash
+              Universitetga topshiring
             </Link>
             <Link
               href="/kirish"
               className="inline-flex h-12 items-center px-7 rounded-md border border-ink text-ink text-[15px] font-medium hover:bg-surface-soft transition-colors"
             >
-              Hisobga kirish
+              Profilingizga kiring
             </Link>
           </div>
         </div>
@@ -56,14 +64,15 @@ export default function Landing() {
 
       {unis.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 sm:px-8 pb-24">
-          <h2 className="text-[22px] font-semibold text-ink mb-6">
+          <h2 className="text-[22px] font-semibold text-ink mb-6 animate-fade-in">
             Platformada {unis.length}+ universitet
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {unis.map((u) => (
+            {unis.map((u, i) => (
               <div
                 key={u.id}
-                className="aspect-square rounded-md bg-surface-soft flex items-center justify-center flex-col p-3 text-center"
+                className="aspect-square rounded-md bg-surface-soft flex items-center justify-center flex-col p-3 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-card animate-fade-in-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}
               >
                 <span className="text-3xl font-bold text-ink/20">{u.logo}</span>
                 <span className="text-[12px] font-medium text-muted mt-1 line-clamp-2">
@@ -77,13 +86,15 @@ export default function Landing() {
 
       <section className="bg-surface-soft py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
-          <h2 className="text-[28px] font-bold text-ink">Qanday ishlaydi</h2>
+          <h2 className="text-[28px] font-bold text-ink">
+            Bittada qanday ishlaydi?
+          </h2>
           <div className="grid sm:grid-cols-3 gap-8 mt-10">
             {[
               {
                 n: "1",
                 t: "Profil yarating",
-                d: "Bir marta hujjatlaringizni, test natijalaringizni va shaxsiy ma'lumotlaringizni kiriting.",
+                d: "Hujjatlaringizni, test natijalaringizni va shaxsiy ma'lumotlaringizni kiriting.",
               },
               {
                 n: "2",
@@ -93,7 +104,7 @@ export default function Landing() {
               {
                 n: "3",
                 t: "Bir tugma bilan yuboring",
-                d: "Tanlangan barcha universitetlarga arizalaringiz birdaniga yuboriladi.",
+                d: "Tanlangan barcha universitetlarga arizalaringiz bittada yuboring.",
               },
             ].map((s) => (
               <div key={s.n}>

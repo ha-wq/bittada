@@ -140,13 +140,13 @@ export function Navbar() {
                 href="/kirish"
                 className="hidden sm:inline-flex h-10 items-center px-4 rounded-full text-[15px] font-medium text-ink hover:bg-surface-soft"
               >
-                Kirish
+                Profilingizga kiring
               </Link>
               <Link
                 href="/royxat"
                 className="inline-flex h-10 items-center px-5 rounded-md bg-primary text-white text-[15px] font-medium hover:bg-primary-active transition-colors"
               >
-                Ro'yxatdan o'tish
+                Universitetga topshiring
               </Link>
             </>
           )}
