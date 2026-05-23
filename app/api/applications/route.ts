@@ -41,10 +41,14 @@ export async function POST(req: NextRequest) {
     const ielts = (profile?.ielts as { overall?: string } | null)?.overall;
     const dtm = (profile?.dtm as { total?: string } | null)?.total;
     const sat = (profile?.sat as { total?: string } | null)?.total;
-    const meets =
-      (!uni.minIelts || Number(ielts || 0) >= uni.minIelts) &&
-      (!uni.minDtm || Number(dtm || 0) >= uni.minDtm) &&
-      (!uni.minSat || Number(sat || 0) >= uni.minSat);
+
+    // Uni typically accepts EITHER IELTS or DTM or SAT — meet any one to qualify.
+    const hasReq = !!(uni.minIelts || uni.minDtm || uni.minSat);
+    const meetsAny =
+      (uni.minIelts && Number(ielts || 0) >= uni.minIelts) ||
+      (uni.minDtm && Number(dtm || 0) >= uni.minDtm) ||
+      (uni.minSat && Number(sat || 0) >= uni.minSat);
+    const meets = !hasReq || !!meetsAny;
 
     return prisma.application.create({
       data: {

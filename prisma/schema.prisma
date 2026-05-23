@@ -69,9 +69,10 @@ model Profile {
   applyingForGrant Boolean @default(false)
 
   // Test scores stored as JSON since shape is nested and optional
-  ielts Json?
-  sat   Json?
-  dtm   Json?
+  ielts            Json?
+  sat              Json?
+  dtm              Json?
+  milliySertifikat Json?
 
   updatedAt DateTime @updatedAt
 }

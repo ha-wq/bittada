@@ -41,8 +41,13 @@ export default function AdminExamsPage() {
 
   const startEdit = (e: ExamRow) => {
     setEditingId(e.id);
+    // Pull UTC components back into the datetime-local input
+    const d = new Date(e.date);
+    const localISO =
+      `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}` +
+      `T${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
     setForm({
-      date: new Date(e.date).toISOString().slice(0, 16),
+      date: localISO,
       location: e.location,
       subjects: e.subjects.join(", "),
       capacity: e.capacity,
@@ -53,8 +58,11 @@ export default function AdminExamsPage() {
   const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setError(null);
+    // Treat datetime-local input as a literal UTC moment so display roundtrips
+    // identically on server and client (avoids timezone drift / hydration drift).
+    const isoUtc = form.date ? `${form.date}:00Z` : "";
     const body = {
-      date: form.date,
+      date: isoUtc,
       location: form.location,
       subjects: form.subjects.split(",").map((s) => s.trim()).filter(Boolean),
       capacity: Number(form.capacity),

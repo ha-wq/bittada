@@ -1,24 +1,39 @@
-export const formatSom = (amount: number) =>
-  new Intl.NumberFormat("uz-UZ").format(amount) + " so'm";
+const UZ_MONTHS = [
+  "yanvar",
+  "fevral",
+  "mart",
+  "aprel",
+  "may",
+  "iyun",
+  "iyul",
+  "avgust",
+  "sentabr",
+  "oktabr",
+  "noyabr",
+  "dekabr",
+];
 
+const pad2 = (n: number) => n.toString().padStart(2, "0");
+
+// Deterministic thousands grouping — same output on server and client.
+export const formatSom = (amount: number) => {
+  const s = Math.trunc(Math.abs(amount)).toString();
+  let out = "";
+  for (let i = s.length; i > 0; i -= 3) {
+    out = s.slice(Math.max(0, i - 3), i) + (out ? " " + out : "");
+  }
+  return (amount < 0 ? "-" : "") + out + " so'm";
+};
+
+// Date-only formatter. Uses UTC components so server and client render identically.
 export const formatDate = (iso: string | Date) => {
   const d = typeof iso === "string" ? new Date(iso) : iso;
-  return d.toLocaleDateString("uz-UZ", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return `${d.getUTCDate()} ${UZ_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 };
 
 export const formatDateTime = (iso: string | Date) => {
   const d = typeof iso === "string" ? new Date(iso) : iso;
-  return d.toLocaleString("uz-UZ", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return `${d.getUTCDate()} ${UZ_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
 };
 
 export const PART_OF_DAY_LABEL: Record<string, string> = {

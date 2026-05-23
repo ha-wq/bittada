@@ -24,6 +24,7 @@ export async function PUT(req: NextRequest) {
       ielts: body.ielts ?? null,
       sat: body.sat ?? null,
       dtm: body.dtm ?? null,
+      milliySertifikat: body.milliySertifikat ?? null,
     };
 
     const profile = await prisma.profile.upsert({

@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
-import { DtmScore, IeltsScore, Profile, SatScore } from "@/lib/types";
+import {
+  DtmScore,
+  IeltsScore,
+  MilliySertifikat,
+  Profile,
+  SatScore,
+} from "@/lib/types";
 import { Button, Input, Select } from "@/components/ui";
+import Image from "next/image";
 
 const EMPTY_IELTS: IeltsScore = {
   overall: "",
@@ -35,6 +42,16 @@ const EMPTY_DTM: DtmScore = {
   ],
 };
 
+const EMPTY_MILLIY: MilliySertifikat = {
+  subjects: [{ subject: "", score: "" }],
+};
+
+const CURRENT_YEAR = new Date().getUTCFullYear();
+const GRAD_YEARS = Array.from(
+  { length: CURRENT_YEAR - 2021 + 1 },
+  (_, i) => 2021 + i,
+).reverse();
+
 const EMPTY: Profile = {
   school: null,
   photo: null,
@@ -51,6 +68,7 @@ const EMPTY: Profile = {
   ielts: null,
   sat: null,
   dtm: null,
+  milliySertifikat: null,
 };
 
 export default function ProfilePage() {
@@ -87,20 +105,6 @@ export default function ProfilePage() {
   };
 
   const complete = isProfileComplete(form);
-  const requiredFields = [
-    form.school,
-    form.phone,
-    form.country,
-    form.citizenship,
-    form.address,
-    form.passportId,
-    form.graduationYear,
-    form.diploma,
-    form.idCardFront,
-    form.idCardBack,
-  ];
-  const filled = requiredFields.filter(Boolean).length;
-  const percent = Math.round((filled / requiredFields.length) * 100);
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-8 py-10">
@@ -109,40 +113,47 @@ export default function ProfilePage() {
         Bu ma'lumotlar barcha universitetlarga ariza topshirishda ishlatiladi.
       </p>
 
-      <div className="mt-6 mb-8 bg-surface-soft rounded-md p-4 flex items-center justify-between">
-        <div>
-          <div className="text-[14px] font-medium text-ink">
-            Profil to'ldirilgan: {percent}%
-          </div>
-          <div className="w-64 h-2 bg-hairline rounded-full mt-2 overflow-hidden">
-            <div
-              className={`h-full ${complete ? "bg-success" : "bg-primary"}`}
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-        </div>
-        {complete && (
-          <span className="text-[13px] font-semibold text-success">✓ To'liq</span>
-        )}
+      <div
+        className={`mt-6 mb-8 rounded-md px-4 py-3 text-[14px] font-medium ${
+          complete
+            ? "bg-[#e6f7e6] text-success"
+            : "bg-surface-soft text-muted"
+        }`}
+      >
+        {complete
+          ? "✓ Profil to'liq. Endi universitetlarga ariza topshirishingiz mumkin."
+          : "Majburiy maydonlarni to'ldirib bo'lgach, ariza topshira olasiz."}
       </div>
 
       <form onSubmit={submit} className="space-y-8">
         <Section title="Shaxsiy ma'lumotlar">
           <div className="space-y-4">
-            <FileUploadField
-              label="Profil rasmi"
-              kind="image"
-              accept="image/jpeg,image/png"
-              acceptLabel="JPG yoki PNG"
-              instructions={[
-                "Oq yoki ochiq fonda olingan rasm",
-                "Yuz to'g'ridan ko'rinib turishi kerak — quyoshli ko'zoynak va bosh kiyimsiz",
-                "So'nggi 6 oy ichida olingan, passport uslubidagi rasm",
-                "Yuzning kamida 70 foizi rasm maydonini egallashi kerak",
-              ]}
-              value={form.photo}
-              onChange={(v) => set("photo", v)}
-            />
+            <div className="grid sm:grid-cols-[1fr_auto] gap-5 items-start">
+              <FileUploadField
+                label="Sizning rasmingiz"
+                kind="image"
+                accept="image/jpeg,image/png"
+                acceptLabel="JPG yoki PNG"
+                instructions={[
+                  "Oq yoki ochiq fonda olingan rasm",
+                  "Yuz to'g'ridan ko'rinib turishi kerak — quyoshli ko'zoynak va bosh kiyimsiz",
+                  "So'nggi 6 oy ichida olingan, passport uslubidagi rasm",
+                  "Yuzning kamida 70 foizi rasm maydonini egallashi kerak",
+                ]}
+                value={form.photo}
+                onChange={(v) => set("photo", v)}
+              />
+              <div className="hidden sm:flex flex-col items-center gap-1.5 mt-7">
+                <Image
+                  src="/example-photo.svg"
+                  alt="Namuna rasm"
+                  width={88}
+                  height={114}
+                  className="rounded border border-hairline"
+                />
+                <span className="text-[11px] text-muted">Namuna</span>
+              </div>
+            </div>
             <Input
               label="Telefon raqami"
               name="phone"
@@ -186,18 +197,16 @@ export default function ProfilePage() {
               <FileUploadField
                 label="ID karta — old tomoni"
                 required
-                kind="image"
-                accept="image/jpeg,image/png"
-                acceptLabel="JPG yoki PNG"
+                accept="image/jpeg,image/png,application/pdf"
+                acceptLabel="JPG, PNG yoki PDF"
                 value={form.idCardFront}
                 onChange={(v) => set("idCardFront", v)}
               />
               <FileUploadField
                 label="ID karta — orqa tomoni"
                 required
-                kind="image"
-                accept="image/jpeg,image/png"
-                acceptLabel="JPG yoki PNG"
+                accept="image/jpeg,image/png,application/pdf"
+                acceptLabel="JPG, PNG yoki PDF"
                 value={form.idCardBack}
                 onChange={(v) => set("idCardBack", v)}
               />
@@ -223,7 +232,7 @@ export default function ProfilePage() {
               required
             >
               <option value="">Tanlang...</option>
-              {Array.from({ length: 8 }, (_, i) => 2026 - i + 2).map((y) => (
+              {GRAD_YEARS.map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
@@ -256,6 +265,21 @@ export default function ProfilePage() {
             >
               {form.dtm && (
                 <DtmFields value={form.dtm} onChange={(v) => set("dtm", v)} />
+              )}
+            </TestBlock>
+
+            <TestBlock
+              label="Milliy sertifikat"
+              hint="Fan bo'yicha milliy sertifikat (o'zMTM)"
+              active={!!form.milliySertifikat}
+              onAdd={() => set("milliySertifikat", EMPTY_MILLIY)}
+              onRemove={() => set("milliySertifikat", null)}
+            >
+              {form.milliySertifikat && (
+                <MilliyFields
+                  value={form.milliySertifikat}
+                  onChange={(v) => set("milliySertifikat", v)}
+                />
               )}
             </TestBlock>
 
@@ -394,7 +418,6 @@ function IeltsFields({
           label="Overall"
           value={value.overall}
           onChange={(e) => set("overall", e.target.value)}
-          placeholder="6.5"
         />
         <Input
           label="Listening"
@@ -448,7 +471,6 @@ function SatFields({
           label="Umumiy ball"
           value={value.total}
           onChange={(e) => set("total", e.target.value)}
-          placeholder="1340"
         />
         <Input
           label="Math"
@@ -500,7 +522,6 @@ function DtmFields({
         label="Umumiy ball"
         value={value.total}
         onChange={(e) => onChange({ ...value, total: e.target.value })}
-        placeholder="189.7"
       />
 
       <div>
@@ -554,6 +575,76 @@ function DtmFields({
         value={value.certificate || null}
         onChange={(v) => onChange({ ...value, certificate: v || undefined })}
       />
+    </div>
+  );
+}
+
+function MilliyFields({
+  value,
+  onChange,
+}: {
+  value: MilliySertifikat;
+  onChange: (v: MilliySertifikat) => void;
+}) {
+  const setSubject = (
+    i: number,
+    patch: Partial<{ subject: string; score: string; certificate?: string }>,
+  ) => {
+    const next = value.subjects.map((s, idx) =>
+      idx === i ? { ...s, ...patch } : s,
+    );
+    onChange({ subjects: next });
+  };
+  const add = () =>
+    onChange({ subjects: [...value.subjects, { subject: "", score: "" }] });
+  const remove = (i: number) =>
+    onChange({ subjects: value.subjects.filter((_, idx) => idx !== i) });
+
+  return (
+    <div className="space-y-4">
+      {value.subjects.map((s, i) => (
+        <div
+          key={i}
+          className="bg-canvas border border-hairline-soft rounded-md p-3 space-y-3"
+        >
+          <div className="grid grid-cols-[1fr_120px] gap-2">
+            <Input
+              label={i === 0 ? "Fan" : undefined}
+              value={s.subject}
+              onChange={(e) => setSubject(i, { subject: e.target.value })}
+              placeholder="Masalan, Matematika"
+            />
+            <Input
+              label={i === 0 ? "Ball" : undefined}
+              value={s.score}
+              onChange={(e) => setSubject(i, { score: e.target.value })}
+            />
+          </div>
+          <FileUploadField
+            label="Sertifikat"
+            accept="application/pdf,image/jpeg,image/png"
+            acceptLabel="PDF, JPG yoki PNG"
+            value={s.certificate || null}
+            onChange={(v) => setSubject(i, { certificate: v || undefined })}
+          />
+          {value.subjects.length > 1 && (
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="text-[13px] text-error font-medium hover:underline"
+            >
+              Bu fanni o'chirish
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="text-[14px] font-medium text-ink border border-hairline hover:border-ink rounded-full px-4 h-9"
+      >
+        + Yana fan qo'shish
+      </button>
     </div>
   );
 }

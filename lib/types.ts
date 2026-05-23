@@ -103,6 +103,16 @@ export type DtmScore = {
   certificate?: string;
 };
 
+export type MilliySubject = {
+  subject: string;
+  score: string;
+  certificate?: string;
+};
+
+export type MilliySertifikat = {
+  subjects: MilliySubject[];
+};
+
 export type Profile = {
   id?: string;
   school: string | null;
@@ -120,6 +130,7 @@ export type Profile = {
   ielts: IeltsScore | null;
   sat: SatScore | null;
   dtm: DtmScore | null;
+  milliySertifikat: MilliySertifikat | null;
 };
 
 export type User = {
