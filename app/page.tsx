@@ -48,17 +48,24 @@ export default function Landing() {
         className="relative flex items-center"
         style={{
           minHeight: "calc(100vh - 76px)",
-          backgroundImage: "url('/universities/wiut.jpg')",
+          backgroundImage: "url('/universities/bmu.jpg')",
           backgroundSize: "cover",
-          backgroundPosition: "center 30%",
+          backgroundPosition: "center",
         }}
       >
-        {/* Overlay: dark on left fading to lighter on right */}
+        {/* Layered overlays for strong text contrast */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(105deg, rgba(10,8,6,0.82) 0%, rgba(10,8,6,0.55) 55%, rgba(10,8,6,0.18) 100%)",
+              "linear-gradient(100deg, rgba(8,6,4,0.92) 0%, rgba(8,6,4,0.78) 45%, rgba(8,6,4,0.45) 80%, rgba(8,6,4,0.30) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.35) 100%)",
           }}
         />
 
@@ -165,7 +172,7 @@ export default function Landing() {
 
       {/* ─── UNIVERSITIES ─── */}
       {unis.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-8 pb-24" id="universitetlar">
+        <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-24 pb-24" id="universitetlar">
           <div className="flex items-baseline justify-between flex-wrap gap-6 mb-8">
             <div>
               <div className="eyebrow mb-2">[01] &nbsp; Platformadagi universitetlar</div>
