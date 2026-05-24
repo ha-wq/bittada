@@ -43,7 +43,9 @@ export function TgProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Ensure the Telegram auth POST is fired only once per attempt.
-  const attempted = useRef(0);
+  // Starts at -1 (no attempt yet) so the first round (tries === 0) runs;
+  // initializing to 0 would make the guard below skip the very first auth.
+  const attempted = useRef(-1);
 
   // Bootstrap auth. If we're inside Telegram, authenticate immediately with
   // initData — don't wait for the initial /api/me round-trip. Otherwise fall
