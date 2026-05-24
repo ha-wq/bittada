@@ -4,7 +4,7 @@ import type { Profile, University, Major } from "@prisma/client";
 // Gemini "free tier" REST endpoint. No SDK — just fetch.
 // Get a key at https://aistudio.google.com/apikey and set GEMINI_API_KEY.
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 function apiKey() {
   const k = process.env.GEMINI_API_KEY;
