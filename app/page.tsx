@@ -44,90 +44,122 @@ export default function Landing() {
   return (
     <div>
       {/* ─── HERO ─── */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-20 pb-24">
+      <section
+        className="relative flex items-center"
+        style={{
+          minHeight: "calc(100vh - 76px)",
+          backgroundImage: "url('/universities/wiut.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center 30%",
+        }}
+      >
+        {/* Overlay: dark on left fading to lighter on right */}
         <div
-          className="inline-flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 border border-hairline rounded-full bg-canvas animate-fade-in-up"
-          style={{ animationDelay: "20ms" }}
-        >
-          <span className="live-dot" />
-          <span className="text-[13px] font-medium text-ink">
-            2026/27 o&apos;quv yili — qabul ochiq
-          </span>
-          {daysLeft !== null && (
-            <>
-              <span className="text-[13px] text-muted">·</span>
-              <span className="text-[13px] text-muted">
-                yaqin muddatga {daysLeft} kun
-              </span>
-            </>
-          )}
-        </div>
-
-        <h1
-          className="display-heading mt-7 max-w-[16ch] animate-fade-in-up"
+          className="absolute inset-0"
           style={{
-            fontSize: "clamp(44px, 7vw, 96px)",
-            animationDelay: "80ms",
+            background:
+              "linear-gradient(105deg, rgba(10,8,6,0.82) 0%, rgba(10,8,6,0.55) 55%, rgba(10,8,6,0.18) 100%)",
           }}
-        >
-          Bir nechta universitetga{" "}
-          <span className="serif-italic text-primary">bittada</span> ariza
-          topshiring.
-        </h1>
+        />
 
-        <p
-          className="text-[18px] sm:text-[19px] text-body mt-7 max-w-[52ch] leading-[1.55] animate-fade-in-up"
-          style={{ animationDelay: "160ms" }}
-        >
-          Westminster, Inha, Ajou, MDIS va boshqa xususiy universitetlarga
-          arizalarni bitta profil orqali yuboring. Hujjatlar bir marta — qaror
-          shu yerda.
-        </p>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-8 py-24 w-full">
+          {/* Eyebrow */}
+          <p className="font-mono text-[11px] tracking-[0.18em] text-white/50 uppercase mb-7 animate-fade-in-up">
+            O&apos;zbekistondagi xususiy universitetlarga yagona ariza
+          </p>
 
-        <div
-          className="mt-9 flex flex-wrap gap-3 animate-fade-in-up"
-          style={{ animationDelay: "240ms" }}
-        >
-          <Link
-            href="/royxat"
-            className="inline-flex h-13 items-center gap-2 px-7 rounded-md bg-primary text-white text-[15px] font-medium hover:bg-primary-active transition-colors"
-            style={{ height: 52 }}
+          {/* Headline */}
+          <h1
+            className="font-bold leading-[1.0] tracking-tight text-white mb-8 animate-fade-in-up"
+            style={{
+              fontSize: "clamp(52px, 9vw, 108px)",
+              animationDelay: "60ms",
+            }}
           >
-            Ro&apos;yxatdan o&apos;tish
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M1 7h12m0 0L8 2m5 5l-5 5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </Link>
-          <Link
-            href="/kirish"
-            className="inline-flex items-center px-7 rounded-md border border-ink text-ink text-[15px] font-medium hover:bg-ink hover:text-canvas transition-colors"
-            style={{ height: 52 }}
+            <span className="text-primary">Bittada</span>
+            <br />
+            universitetga
+            <br />
+            topshiring.
+          </h1>
+
+          {/* Sub */}
+          <p
+            className="text-[17px] sm:text-[19px] text-white/70 max-w-[44ch] leading-[1.6] mb-10 animate-fade-in-up"
+            style={{ animationDelay: "120ms" }}
           >
-            Profilingizga kiring
-          </Link>
+            Westminster, Inha, Ajou, MDIS va boshqa xususiy universitetlarga
+            arizalarni bitta profil orqali yuboring. Hujjatlar bir marta —
+            qaror shu yerda.
+          </p>
+
+          {/* CTAs */}
+          <div
+            className="flex flex-wrap gap-4 animate-fade-in-up"
+            style={{ animationDelay: "180ms" }}
+          >
+            <Link
+              href="/royxat"
+              className="inline-flex items-center gap-2.5 px-8 rounded-md bg-primary text-white text-[16px] font-semibold hover:bg-primary-active transition-colors"
+              style={{ height: 54 }}
+            >
+              Ro&apos;yxatdan o&apos;tish
+              <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M1 7h12m0 0L8 2m5 5l-5 5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </Link>
+            <Link
+              href="/kirish"
+              className="inline-flex items-center px-8 rounded-md border border-white/30 text-white text-[16px] font-semibold hover:bg-white/10 transition-colors"
+              style={{ height: 54 }}
+            >
+              Profilingizga kiring
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <div
+            className="mt-16 flex flex-wrap gap-10 animate-fade-in-up"
+            style={{ animationDelay: "260ms" }}
+          >
+            {[
+              { n: `${Math.max(unis.length, 6)}+`, l: "Universitet" },
+              { n: "1 ta", l: "Profil, barchasi uchun" },
+              { n: "9 min", l: "O'rtacha to'ldirish" },
+              ...(daysLeft !== null
+                ? [{ n: `${daysLeft}`, l: "Kun qoldi" }]
+                : []),
+            ].map((s) => (
+              <div key={s.l}>
+                <div className="text-white font-bold leading-none mb-1.5" style={{ fontSize: 34 }}>
+                  {s.n}
+                </div>
+                <div className="font-mono text-[11px] tracking-[0.12em] text-white/45 uppercase">
+                  {s.l}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Stat strip */}
-        <div
-          className="mt-16 pt-8 border-t border-hairline max-w-[720px] flex flex-wrap gap-12 animate-fade-in-up"
-          style={{ animationDelay: "320ms" }}
-        >
-          {[
-            { n: `${Math.max(unis.length, 12)}+`, l: "universitet" },
-            { n: "1 ta", l: "profil, barchasi uchun" },
-            { n: "9 daqiqa", l: "o'rtacha to'ldirish" },
-          ].map((s) => (
-            <div key={s.l}>
-              <div className="display-heading text-[30px] mb-1">{s.n}</div>
-              <div className="text-[14px] text-muted">{s.l}</div>
-            </div>
-          ))}
+        {/* Scroll hint */}
+        <div className="absolute bottom-8 right-8 hidden md:flex flex-col items-center gap-2 text-white/35 animate-fade-in">
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase">Scroll</span>
+          <svg width="14" height="22" viewBox="0 0 14 22" fill="none">
+            <path
+              d="M7 1v20M7 21l-5-5M7 21l5-5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
       </section>
 
