@@ -172,7 +172,7 @@ export default function Landing() {
 
       {/* ─── UNIVERSITIES ─── */}
       {unis.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-24 pb-24" id="universitetlar">
+        <section className="mx-auto max-w-7xl px-4 sm:px-8 pt-12 pb-24" id="universitetlar">
           <div className="flex items-baseline justify-between flex-wrap gap-6 mb-8">
             <div>
               <div className="eyebrow mb-2">[01] &nbsp; Platformadagi universitetlar</div>
