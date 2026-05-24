@@ -8,7 +8,7 @@ const UNIVERSITIES = [
     slug: "westminster",
     name: "Westminster International University in Tashkent",
     shortName: "WIUT",
-    logo: "W",
+    logo: "/universities/wiut.jpg",
     city: "Toshkent",
     address: "Istiqbol ko'chasi 12, Toshkent",
     description:
@@ -33,7 +33,7 @@ const UNIVERSITIES = [
     slug: "inha",
     name: "Inha University in Tashkent",
     shortName: "IUT",
-    logo: "I",
+    logo: "/universities/inha.jpg",
     city: "Toshkent",
     address: "Ziyolilar ko'chasi 9, Toshkent",
     description:
@@ -56,7 +56,7 @@ const UNIVERSITIES = [
     slug: "tiiame",
     name: "TIIAME — Milliy tadqiqot universiteti",
     shortName: "TIIAME",
-    logo: "T",
+    logo: "/universities/tiiame.jpg",
     city: "Toshkent",
     address: "Qori Niyoziy ko'chasi 39, Toshkent",
     description:
@@ -78,7 +78,7 @@ const UNIVERSITIES = [
     slug: "ajou",
     name: "Ajou University in Tashkent",
     shortName: "AUIT",
-    logo: "A",
+    logo: "/universities/ajou.jpg",
     city: "Toshkent",
     address: "Mirzo Ulug'bek tumani, Toshkent",
     description:
@@ -101,7 +101,7 @@ const UNIVERSITIES = [
     slug: "mdis",
     name: "Management Development Institute of Singapore",
     shortName: "MDIS",
-    logo: "M",
+    logo: "/universities/mdis.jpg",
     city: "Toshkent",
     address: "Buyuk ipak yo'li ko'chasi 7, Toshkent",
     description:
@@ -124,7 +124,7 @@ const UNIVERSITIES = [
     slug: "amity",
     name: "Amity University Tashkent",
     shortName: "Amity",
-    logo: "A",
+    logo: "/universities/amity.jpg",
     city: "Toshkent",
     address: "Yangiyo'l yo'li, Toshkent viloyati",
     description:
