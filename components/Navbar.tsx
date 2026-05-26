@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 
 const STUDENT_LINKS = [
   { href: "/dashboard", label: "Universitetlar" },
-  { href: "/skauting", label: "Skauting" },
   { href: "/tavsiya", label: "AI tavsiya" },
-  { href: "/arizalar", label: "Arizalarim" },
+  { href: "/arizalar", label: "Mening arizalarim" },
   { href: "/imtihonlar", label: "Imtihonlar" },
   { href: "/profil", label: "Profil" },
 ];
@@ -92,7 +91,27 @@ export function Navbar() {
           )}
         </Link>
 
-        {user && <AnimatedNav links={links} pathname={pathname} />}
+        {user && (
+          <nav className="hidden md:flex items-center gap-1">
+            {links.map((link) => {
+              const active =
+                pathname === link.href || pathname.startsWith(link.href + "/");
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-4 py-2 rounded-full text-[15px] font-medium transition-colors ${
+                    active
+                      ? "bg-surface-strong text-ink"
+                      : "text-muted hover:text-ink hover:bg-surface-soft"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
 
         <div className="flex items-center gap-3">
           {user ? (
@@ -167,107 +186,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  );
-}
-
-// ─── Animated nav with sliding active-pill + hover-pill indicator ───
-type NavLink = { href: string; label: string };
-
-function AnimatedNav({ links, pathname }: { links: NavLink[]; pathname: string }) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const linkRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
-  const [activeBox, setActiveBox] = useState<{ left: number; width: number } | null>(null);
-  const [hoverBox, setHoverBox] = useState<{ left: number; width: number } | null>(null);
-
-  const activeHref =
-    links.find(
-      (l) => pathname === l.href || pathname.startsWith(l.href + "/"),
-    )?.href ?? null;
-
-  // Position the active pill whenever the route changes or layout shifts.
-  useLayoutEffect(() => {
-    if (!activeHref || !containerRef.current) {
-      setActiveBox(null);
-      return;
-    }
-    const el = linkRefs.current.get(activeHref);
-    const containerRect = containerRef.current.getBoundingClientRect();
-    if (!el) {
-      setActiveBox(null);
-      return;
-    }
-    const rect = el.getBoundingClientRect();
-    setActiveBox({ left: rect.left - containerRect.left, width: rect.width });
-  }, [activeHref, links]);
-
-  // Recompute on window resize.
-  useEffect(() => {
-    const onResize = () => {
-      if (!activeHref || !containerRef.current) return;
-      const el = linkRefs.current.get(activeHref);
-      if (!el) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
-      setActiveBox({ left: rect.left - containerRect.left, width: rect.width });
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [activeHref]);
-
-  const onLinkEnter = (href: string) => {
-    if (!containerRef.current) return;
-    const el = linkRefs.current.get(href);
-    if (!el) return;
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const rect = el.getBoundingClientRect();
-    setHoverBox({ left: rect.left - containerRect.left, width: rect.width });
-  };
-
-  return (
-    <nav
-      ref={containerRef}
-      onMouseLeave={() => setHoverBox(null)}
-      className="hidden md:flex items-center gap-1 relative"
-    >
-      {/* Sliding hover pill (subtle) */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 -translate-y-1/2 h-9 rounded-full bg-surface-soft transition-all duration-300 ease-out"
-        style={{
-          left: hoverBox?.left ?? 0,
-          width: hoverBox?.width ?? 0,
-          opacity: hoverBox ? 1 : 0,
-        }}
-      />
-      {/* Sliding active pill (stronger) */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 -translate-y-1/2 h-9 rounded-full bg-surface-strong transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: activeBox?.left ?? 0,
-          width: activeBox?.width ?? 0,
-          opacity: activeBox ? 1 : 0,
-        }}
-      />
-      {links.map((link) => {
-        const isActive = link.href === activeHref;
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            ref={(node) => {
-              if (node) linkRefs.current.set(link.href, node);
-              else linkRefs.current.delete(link.href);
-            }}
-            onMouseEnter={() => onLinkEnter(link.href)}
-            className={`relative z-10 px-4 py-2 rounded-full text-[15px] font-medium transition-colors duration-200 ${
-              isActive ? "text-ink" : "text-muted hover:text-ink"
-            }`}
-          >
-            {link.label}
-          </Link>
-        );
-      })}
-    </nav>
   );
 }

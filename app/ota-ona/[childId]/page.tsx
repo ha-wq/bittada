@@ -401,7 +401,7 @@ function ChildApplications({
                     {u.name}
                   </div>
                   <div className="text-[12px] text-muted">
-                    {u.city} · Ohirgi muddat: {formatDate(u.deadline)}
+                    {u.city} · Muddat: {formatDate(u.deadline)}
                   </div>
                 </button>
                 {openId === u.id && (

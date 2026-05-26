@@ -88,7 +88,7 @@ function UniCard({
             {uni.name}
           </div>
           <div className="text-[13px] text-muted mt-0.5">
-            {uni.city} · Ohirgi muddat: {formatDate(uni.deadline)}
+            {uni.city} · Muddat: {formatDate(uni.deadline)}
           </div>
         </div>
         {applied && (
