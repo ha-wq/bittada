@@ -114,7 +114,7 @@ export default function UniversityDetailPage({
 
           {/* Quick stat strip */}
           <div className="grid grid-cols-3 gap-3 mt-6">
-            <StatPill label="Muddat" value={formatDate(uni.deadline)} />
+            <StatPill label="Ohirgi muddat" value={formatDate(uni.deadline)} />
             <StatPill label="Shahar" value={uni.city} />
             <StatPill label="Yo'nalishlar" value={`${uni.majors.length} ta`} />
           </div>
@@ -225,7 +225,7 @@ export default function UniversityDetailPage({
 
             <div className="text-[13px] text-body space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-muted">Muddat</span>
+                <span className="text-muted">Ohirgi muddat</span>
                 <span className="text-ink font-medium">{formatDate(uni.deadline)}</span>
               </div>
               <div className="flex justify-between">

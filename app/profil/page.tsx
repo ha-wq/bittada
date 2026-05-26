@@ -3,8 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { isProfileComplete, useAuth, apiJson } from "@/lib/auth-context";
-import { ScoutingCard } from "@/components/ScoutingCard";
 import { ClaimCodeCard } from "@/components/ClaimCodeCard";
+import Link from "next/link";
 import {
   DtmScore,
   IeltsScore,
@@ -377,12 +377,35 @@ function ProfilePageInner() {
         </div>
       </form>
 
-      <div className="mt-8 space-y-6">
-        <ScoutingCard
-          profile={user.profile}
-          complete={isProfileComplete(user.profile)}
-          onChanged={refresh}
-        />
+      <div className="mt-8">
+        <Link
+          href="/skauting"
+          className="group block p-5 rounded-md border border-hairline bg-surface-soft hover:border-ink transition-colors"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10.5px] font-mono uppercase tracking-widest text-primary">
+                  Skauting
+                </span>
+                {user.profile?.scoutingEnabled && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-success/10 text-success px-1.5 py-0.5 rounded">
+                    Yoqilgan
+                  </span>
+                )}
+              </div>
+              <div className="text-[16px] font-semibold text-ink mt-1">
+                Avtomatik ariza topshirish
+              </div>
+              <div className="text-[13px] text-muted mt-0.5">
+                Profilingizga mos universitetlarga ariza avtomatik yuboriladi.
+              </div>
+            </div>
+            <span className="text-[14px] font-medium text-ink whitespace-nowrap group-hover:translate-x-0.5 transition-transform">
+              Sozlash →
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* Ota-ona — visually distinct section at the end */}
