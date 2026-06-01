@@ -409,7 +409,7 @@ function ProfilePageInner() {
       </div>
 
       {/* Ota-ona — visually distinct section at the end */}
-      <div className="mt-10">
+      <div id="ota-ona" className="mt-10 scroll-mt-24">
         <div className="flex items-center gap-3 mb-4">
           <div className="h-px flex-1 bg-hairline" />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">

@@ -84,7 +84,7 @@ export default function AdminApplicationsPage() {
         </div>
         <a
           href="/api/admin/applications/export"
-          className="inline-flex h-11 items-center px-5 rounded-md bg-ink text-white text-[14px] font-medium hover:opacity-90"
+          className="inline-flex h-11 items-center px-5 rounded-md bg-primary text-white text-[14px] font-medium hover:bg-primary-active transition-colors"
         >
           ⬇ Excel ga eksport
         </a>
